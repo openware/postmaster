@@ -1,12 +1,13 @@
 package mailconsumer
 
-import "time"
+import (
+	"github.com/dgrijalva/jwt-go"
+	"time"
+)
 
-type JWTPayload struct {
-	Iss   string `json:"iss"`
-	Jti   string `json:"jti"`
-	Iat   int    `json:"iat"`
-	Exp   int    `json:"exp"`
+type EventAPIClaims struct {
+	jwt.StandardClaims
+
 	Event struct {
 		Record struct {
 			UID                string    `json:"uid"`
@@ -22,5 +23,18 @@ type JWTPayload struct {
 		} `json:"record"`
 		Name string `json:"name"`
 	} `json:"event"`
-	Alg string `json:"alg"`
+}
+
+type EventMsgSignature struct {
+	Protected string `json:"protected"`
+	Header    struct {
+		Kid string `json:"kid"`
+	} `json:"header"`
+	Signature string `json:"signature"`
+}
+
+// Structure of Event API Message.
+type EventMsg struct {
+	Payload    string              `json:"payload"`
+	Signatures []EventMsgSignature `json:"signatures"`
 }

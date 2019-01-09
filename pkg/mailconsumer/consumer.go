@@ -1,8 +1,15 @@
 package mailconsumer
 
 import (
-	"github.com/streadway/amqp"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
+)
+
+import (
+	"github.com/dgrijalva/jwt-go"
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -83,20 +90,61 @@ func (c *Consumer) Run(queue amqp.Queue) {
 
 	go func() {
 		for d := range msgs {
+			// TODO: Parse received string into JSON.
+			msg := EventMsg{}
+
 			log.Printf("[x] %s", d.Body)
 
-			// Decode JWT Token to JSON.
+			data := bytes.NewReader(d.Body)
 
-			// Parse json.
+			err := json.NewDecoder(data).Decode(&msg)
 
-			// Send email.
+			if err != nil {
+				log.Printf("Event API Message %s\n", err.Error())
+			}
 
+			// TODO: Decode and verify JWT Payload.
+
+			if len(msg.Signatures) < 1 {
+				log.Println("No signatures to verify. Skipping...")
+				continue
+			} else if len(msg.Signatures) > 1 {
+				log.Println("Multi Signature JWT keys does not supported. Skipping...")
+				continue
+			}
+
+			tokenStr := fmt.Sprintf("%s.%s.%s",
+				msg.Signatures[0].Protected,
+				msg.Payload,
+				msg.Signatures[0].Signature,
+			)
+
+			token, err := jwt.ParseWithClaims(tokenStr, &EventAPIClaims{}, ValidateJWT)
+
+			fmt.Println("Token:", token)
+
+			if err != nil {
+				log.Printf("JWT Parse: %s\n", err.Error())
+				continue
+			}
+
+			fmt.Print(token.Claims)
+
+			claims, ok := token.Claims.(EventAPIClaims)
+			if !ok || !token.Valid {
+				fmt.Println(err)
+			}
+
+			// TODO: Get email, ... from JWT payload.
+			email := claims.Event.Record.Email
+			fmt.Println("Email", email)
+
+			// TODO: Send email using SMTP package.
 		}
 	}()
 
 	log.Printf(" [*] Waiting for events. To exit press CTRL+C")
 	<-forever
-
 }
 
 func NewConsumer(amqpURI string) *Consumer {
