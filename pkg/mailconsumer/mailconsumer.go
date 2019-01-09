@@ -6,18 +6,20 @@ import (
 )
 
 func amqpURI() string {
-	//EVENT_API_RABBITMQ_HOST:     localhost
-	host := utils.GetEnv("EVENT_API_RABBITMQ_URL", "localhost")
-	//EVENT_API_RABBITMQ_PORT:     "5672"
-	port := utils.GetEnv("EVENT_API_RABBITMQ_PORT", "5672")
-	//EVENT_API_RABBITMQ_USERNAME: guest
-	username := utils.GetEnv("EVENT_API_RABBITMQ_USERNAME", "guest")
-	//EVENT_API_RABBITMQ_PASSWORD: guest
-	password := utils.GetEnv("EVENT_API_RABBITMQ_PASSWORD", "guest")
+	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
+	port := utils.GetEnv("RABBITMQ_PORT", "5672")
+	username := utils.GetEnv("RABBITMQ_USERNAME", "guest")
+	password := utils.GetEnv("RABBITMQ_PASSWORD", "guest")
 
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
 
 func Run() {
-	NewConsumer(amqpURI())
+	uri := amqpURI()
+	consumer := NewConsumer(uri)
+	queue := consumer.DeclareQueue()
+	consumer.BindQueue(queue)
+
+	// Listen for events.
+	consumer.Run(queue)
 }
