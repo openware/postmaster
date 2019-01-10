@@ -1,21 +1,21 @@
 package mailconsumer
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"log"
 )
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"github.com/streadway/amqp"
 )
 
 const (
-	consumerTag  = "pigeon"
-	routingKey   = "account.created"
-	exchangeName = "barong.events.model"
+	ConsumerTag  = "pigeon"
+	RoutingKey   = "account.created"
+	ExchangeName = "barong.events.model"
 	QueueName    = "pigeon.events.consumer"
 )
 
@@ -23,14 +23,13 @@ type Consumer struct {
 	conn    *amqp.Connection
 	channel *amqp.Channel
 	tag     string
-	// done    chan error
 }
 
 func (c *Consumer) BindQueue(queue amqp.Queue) {
 	err := c.channel.QueueBind(
 		queue.Name,
-		routingKey,
-		exchangeName,
+		RoutingKey,
+		ExchangeName,
 		false,
 		nil,
 	)
@@ -42,7 +41,7 @@ func (c *Consumer) BindQueue(queue amqp.Queue) {
 
 func (c *Consumer) DeclareQueue() amqp.Queue {
 	err := c.channel.ExchangeDeclare(
-		exchangeName,
+		ExchangeName,
 		"direct",
 		false,
 		false,
@@ -71,8 +70,57 @@ func (c *Consumer) DeclareQueue() amqp.Queue {
 	return queue
 }
 
+func parseDelivery(delivery amqp.Delivery) error {
+	eventMsg := EventMsg{}
+
+	log.Printf("Delivery: %s\n", delivery.Body)
+
+	// Parse received []byte into JSON.
+	if err := json.Unmarshal(delivery.Body, &eventMsg); err != nil {
+		log.Printf("Event API Message %s", err.Error())
+	}
+
+	// Verify JWT Payload.
+	if len(eventMsg.Signatures) < 1 {
+		log.Println("")
+		return errors.New("no signatures to verify")
+	} else if len(eventMsg.Signatures) > 1 {
+		return errors.New("multi signature JWT keys does not supported")
+	}
+
+	// Build token from received header, payload, signatures.
+	tokenStr := fmt.Sprintf("%s.%s.%s",
+		eventMsg.Signatures[0].Protected,
+		eventMsg.Payload,
+		eventMsg.Signatures[0].Signature,
+	)
+
+	token, err := jwt.ParseWithClaims(tokenStr, &EventAPIClaims{}, ValidateJWT)
+
+	fmt.Println("Token:", token)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Print(token.Claims)
+
+	claims, ok := token.Claims.(EventAPIClaims)
+	if !ok || !token.Valid {
+		fmt.Println(err)
+	}
+
+	// TODO: Get email, ... from JWT payload.
+	email := claims.Event.Record.Email
+	fmt.Println("Email", email)
+
+	// TODO: Send email using SMTP package.
+
+	return nil
+}
+
 func (c *Consumer) Run(queue amqp.Queue) {
-	msgs, err := c.channel.Consume(
+	deliveries, err := c.channel.Consume(
 		queue.Name,
 		c.tag,
 		true,
@@ -89,57 +137,10 @@ func (c *Consumer) Run(queue amqp.Queue) {
 	forever := make(chan bool)
 
 	go func() {
-		for d := range msgs {
-			// TODO: Parse received string into JSON.
-			msg := EventMsg{}
-
-			log.Printf("[x] %s", d.Body)
-
-			data := bytes.NewReader(d.Body)
-
-			err := json.NewDecoder(data).Decode(&msg)
-
-			if err != nil {
-				log.Printf("Event API Message %s\n", err.Error())
+		for delivery := range deliveries {
+			if err := parseDelivery(delivery); err != nil {
+				log.Println(err)
 			}
-
-			// TODO: Decode and verify JWT Payload.
-
-			if len(msg.Signatures) < 1 {
-				log.Println("No signatures to verify. Skipping...")
-				continue
-			} else if len(msg.Signatures) > 1 {
-				log.Println("Multi Signature JWT keys does not supported. Skipping...")
-				continue
-			}
-
-			tokenStr := fmt.Sprintf("%s.%s.%s",
-				msg.Signatures[0].Protected,
-				msg.Payload,
-				msg.Signatures[0].Signature,
-			)
-
-			token, err := jwt.ParseWithClaims(tokenStr, &EventAPIClaims{}, ValidateJWT)
-
-			fmt.Println("Token:", token)
-
-			if err != nil {
-				log.Printf("JWT Parse: %s\n", err.Error())
-				continue
-			}
-
-			fmt.Print(token.Claims)
-
-			claims, ok := token.Claims.(EventAPIClaims)
-			if !ok || !token.Valid {
-				fmt.Println(err)
-			}
-
-			// TODO: Get email, ... from JWT payload.
-			email := claims.Event.Record.Email
-			fmt.Println("Email", email)
-
-			// TODO: Send email using SMTP package.
 		}
 	}()
 
@@ -148,7 +149,7 @@ func (c *Consumer) Run(queue amqp.Queue) {
 }
 
 func NewConsumer(amqpURI string) *Consumer {
-	// Make a connection.
+	// Create a connection.
 	conn, err := amqp.Dial(amqpURI)
 
 	if err != nil {
@@ -167,7 +168,7 @@ func NewConsumer(amqpURI string) *Consumer {
 	consumer := &Consumer{
 		conn:    conn,
 		channel: channel,
-		tag:     consumerTag,
+		tag:     ConsumerTag,
 	}
 
 	return consumer
