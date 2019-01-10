@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+// MustGetEnv returns error, if variable was not set.
+// Otherwise returns content.
 func MustGetEnv(name string) string {
 	value, exist := os.LookupEnv(name)
 
