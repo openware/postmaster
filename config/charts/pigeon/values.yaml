@@ -1,0 +1,36 @@
+# Default values for pigeon.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: rubykube/pigeon
+  tag: latest
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+rabbitmq: {}
+  host: "rabbitmq.kube-services"
+  port: "5672"
+  username: "user"
+  # password: "changeme"
+
+smtp:
+  host: "smtp-relay.kube-services"
+  port: "25"
+
+app:
+  vars: {}
+    # JWT_PUBLIC_KEY: "changeme"
+    # SENDER_EMAIL: "noreply@pigeon.com"
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
