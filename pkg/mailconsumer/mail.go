@@ -1,86 +1,51 @@
 package mailconsumer
 
 import (
-	"fmt"
+	"bytes"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"html/template"
+	"log"
 	"net/smtp"
 )
 
 import (
-	"github.com/shal/pigeon/pkg/mailer"
+	"github.com/sendgrid/sendgrid-go"
 	"github.com/shal/pigeon/pkg/utils"
 )
 
 type MailAccountTpl struct {
-	mailer.MailTpl
-
 	Record AccountRecord `json:"record"`
 }
 
 func SendEmail(record AccountRecord, cli *smtp.Client) error {
-	sender := utils.GetEnv("SENDER_EMAIL", "example@domain.com")
+	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
 
-	fmt.Println("BR 1")
-
-	if err := cli.Mail(sender); err != nil {
-		return err
-	}
-
-	fmt.Println("BR 2")
-
-	if err := cli.Rcpt(record.Email); err != nil {
-		return err
-	}
-
-	fmt.Println("BR 3")
-
-	wc, err := cli.Data()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("BR 4")
-
-	mailTpl := MailAccountTpl{
-		mailer.MailTpl{
-			To:   sender,
-			From: record.Email,
-		},
-		record,
-	}
-
-	fmt.Println("BR 5")
+	email := utils.GetEnv("SENDER_EMAIL", "example@domain.com")
+	name := utils.GetEnv("SENDER_NAME", "example@domain.com")
+	subject := "Confirmation Instructions"
+	from := mail.NewEmail(name, email)
+	to := mail.NewEmail("", record.Email)
 
 	tpl, err := template.ParseFiles("templates/sign_up.tpl")
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("BR 6")
+	buff := bytes.Buffer{}
+	tpl.Execute(&buff, record)
 
-	fmt.Fprintf(wc, "Message-Id: <%s>\r\n", mailTpl.MessageID())
+	html := mail.NewContent("text/html", buff.String())
+	message := mail.NewV3MailInit(from, subject, to, html)
 
-	tpl.Execute(wc, mailTpl)
+	client := sendgrid.NewSendClient(apiKey)
+	response, err := client.Send(message)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("BR 7")
-
-	err = wc.Close()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("BR 8")
-
-	// Send the QUIT command and close the connection.
-	err = cli.Quit()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("BR 9")
+	log.Println("Status Code: ", response.StatusCode)
+	log.Println("Response Body: ", response.Body)
+	log.Println("Response Headers: ", response.Headers)
 
 	return nil
 }
