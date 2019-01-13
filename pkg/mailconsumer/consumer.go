@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/smtp"
 )
 
 import (
@@ -21,13 +20,6 @@ const (
 	RoutingKey = "account.created"
 	Exchange   = "barong.events.model"
 )
-
-func smtpURI() string {
-	host := utils.GetEnv("SMTP_HOST", "localhost")
-	port := utils.GetEnv("SMTP_PORT", "25")
-
-	return fmt.Sprintf("%s:%s", host, port)
-}
 
 func amqpURI() string {
 	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
@@ -108,8 +100,8 @@ func parseDelivery(delivery amqp.Delivery, callback func(record AccountRecord) e
 
 func Run() {
 	// TODO: Check JWT_PUBLIC_KEY to be set on start.
+	// TODO: Check SENDGRID_API_KEY to be set on start.
 	amqpUri := amqpURI()
-	smtpUri := smtpURI()
 
 	c := consumer.New(amqpUri, Exchange, RoutingKey)
 	queue := c.DeclareQueue()
@@ -132,9 +124,7 @@ func Run() {
 	forever := make(chan bool)
 
 	callback := func(record AccountRecord) error {
-		if cli, err := smtp.Dial(smtpUri); err != nil {
-			return err
-		} else if err := SendEmail(record, cli); err != nil {
+		if err := SendEmail(record); err != nil {
 			return err
 		}
 

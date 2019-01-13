@@ -18,12 +18,9 @@ rabbitmq: {}
   username: "user"
   # password: "changeme"
 
-smtp:
-  host: "smtp-relay.kube-services"
-  port: "25"
-
 app:
   vars: {}
+    # SENDGRID_API_KEY: "changeme"
     # JWT_PUBLIC_KEY: "changeme"
     # SENDER_EMAIL: "noreply@pigeon.com"
 

@@ -23,14 +23,15 @@ $ go run ./cmd/pigeon/main.go
 | Variable            | Description                  | Required | Default                  |
 |---------------------|------------------------------|----------|--------------------------|
 | `JWT_PUBLIC_KEY`    | RSA Public Key for decoding  | *yes*    |                          |
+| `SENDGRID_API_KEY`  | SendGrid API Key             | *yes*    |                          |
 | `RABBITMQ_HOST`     | Host of RabbitMQ daemon      | *no*     | `localhost`              |
 | `RABBITMQ_PORT`     | Port of RabbitMQ daemon      | *no*     | `5672`                   |
 | `RABBITMQ_USERNAME` | RabbitMQ username            | *no*     | `guest`                  |
 | `RABBITMQ_PASSWORD` | RabbitMQ password            | *no*     | `guest`                  |
-| `SMTP_HOST`         | Host of mail relay (postfix) | *no*     | `localhost`              |
-| `SMTP_PORT`         | Port of mail relay (postfix) | *no*     | `25`                     |
-| `SENDER_EMAIL`      | Email address of sender      | *no*     | `example@domain.com`     |
+| `SENDER_EMAIL`      | Email address of mail sender | *no*     | `example@domain.com`     |
+| `SENDER_NAME `      | Name of mail sender          | *no*     |                          |
 | `FRONTEND_DOMAIN`   | Domain of platform UI        | *no*     | `http://www.example.com` |
+
 
 ## License
 

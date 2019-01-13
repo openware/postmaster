@@ -36,10 +36,6 @@ Expands environment variables
   value: {{ .Values.rabbitmq.username | quote }}
 - name: RABBITMQ_PASSWORD
   value: {{ .Values.rabbitmq.password | quote }}
-- name: SMTP_HOST
-  value: {{ .Values.smtp.host | quote }}
-- name: SMTP_PORT
-  value: {{ .Values.smtp.port | quote }}
 {{- range $key, $value := .Values.app.vars }}
 - name: {{ $key }}
   value: {{ $value | quote }}

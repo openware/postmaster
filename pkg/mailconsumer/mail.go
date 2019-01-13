@@ -5,7 +5,6 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"html/template"
 	"log"
-	"net/smtp"
 )
 
 import (
@@ -17,7 +16,7 @@ type MailAccountTpl struct {
 	Record AccountRecord `json:"record"`
 }
 
-func SendEmail(record AccountRecord, cli *smtp.Client) error {
+func SendEmail(record AccountRecord) error {
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
 
 	email := utils.GetEnv("SENDER_EMAIL", "example@domain.com")
