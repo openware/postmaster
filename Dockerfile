@@ -19,12 +19,7 @@ FROM alpine
 
 WORKDIR /app
 
-<<<<<<< HEAD
 COPY --from=build /go/bin/pigeon ./pigeon
 COPY templates/ templates/
-=======
-COPY --from=build /go/bin/pigeon /app/pigeon
-COPY templates .
->>>>>>> eed5717... Add deployment files
 
 ENTRYPOINT ["./pigeon"]
