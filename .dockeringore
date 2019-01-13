@@ -1,0 +1,12 @@
+.git
+.gitignore
+
+Dockerfile
+.dockerignore
+
+LICENSE
+README.md
+
+.DS_Store
+.circleci
+.idea
