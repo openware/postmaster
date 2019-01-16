@@ -1,12 +1,15 @@
 package eventapi
 
 import (
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"github.com/shal/pigeon/pkg/utils"
 	"io"
 	"io/ioutil"
 	"log"
+)
+
+import (
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/shal/pigeon/pkg/utils"
 )
 
 type Email struct {

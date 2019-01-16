@@ -61,12 +61,7 @@ func DeliveryAsJWT(delivery amqp.Delivery) (string, error) {
 	return tokenStr, nil
 }
 
-func parseDelivery(delivery amqp.Delivery, callback func(record AccountRecord) error) error {
-	tokenStr, err := DeliveryAsJWT(delivery)
-	if err != nil {
-		return err
-	}
-
+func ParseJWT(tokenStr string, callback func(record AccountRecord)) error {
 	token, err := jwt.ParseWithClaims(tokenStr, &eventapi.Claims{}, eventapi.ValidateJWT)
 	if err != nil {
 		return err
@@ -92,10 +87,8 @@ func parseDelivery(delivery amqp.Delivery, callback func(record AccountRecord) e
 
 	log.Println(acc)
 
-	// Send email over using standard SMTP package.
-	if err := callback(acc); err != nil {
-		log.Println(err)
-	}
+	// Send email.
+	callback(acc)
 
 	return nil
 }
@@ -125,15 +118,15 @@ func Run() {
 
 	forever := make(chan bool)
 
-	callback := func(r AccountRecord) error {
+	callback := func(r AccountRecord) {
 		tpl, err := template.ParseFiles("templates/sign_up.tpl")
 		if err != nil {
-			return err
+			log.Println(err)
 		}
 
 		buff := bytes.Buffer{}
 		if err := tpl.Execute(&buff, r); err != nil {
-			return err
+			log.Println(err)
 		}
 
 		email := eventapi.Email{
@@ -143,15 +136,19 @@ func Run() {
 		}
 
 		if err := email.Send(r.Record); err != nil {
-			return err
+			log.Println(err)
 		}
-
-		return nil
 	}
 
 	go func() {
 		for delivery := range deliveries {
-			if err := parseDelivery(delivery, callback); err != nil {
+			jwtStr, err := DeliveryAsJWT(delivery)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			if err := ParseJWT(jwtStr, callback); err != nil {
 				log.Println(err)
 			}
 		}
