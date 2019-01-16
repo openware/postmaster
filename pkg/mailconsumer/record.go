@@ -1,17 +1,17 @@
 package mailconsumer
 
-import (
-	"fmt"
-)
+import "fmt"
 
 import (
+	"github.com/shal/pigeon/pkg/eventapi"
 	"github.com/shal/pigeon/pkg/utils"
 )
 
 type AccountRecord struct {
+	eventapi.Record
+
 	ConfirmationToken string `json:"confirmation_token"`
 	UID               string `json:"uid"`
-	Email             string `json:"email"`
 	Level             int    `json:"level"`
 	OtpEnabled        bool   `json:"otp_enabled"`
 	State             string `json:"state"`

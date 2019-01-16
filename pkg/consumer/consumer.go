@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	Tag       = "pigeon"
-	QueueName = "pigeon.events.consumer"
+	tag       = "pigeon"
+	queueName = "pigeon.events.consumer"
 )
 
 type Consumer struct {
@@ -51,7 +51,7 @@ func (c *Consumer) DeclareQueue() amqp.Queue {
 	}
 
 	queue, err := c.Channel.QueueDeclare(
-		QueueName,
+		queueName,
 		true,
 		true,
 		true,
@@ -86,7 +86,7 @@ func New(uri, exchange, key string) *Consumer {
 	consumer := &Consumer{
 		Conn:       conn,
 		Channel:    channel,
-		Tag:        Tag,
+		Tag:        tag,
 		Exchange:   exchange,
 		RoutingKey: key,
 	}

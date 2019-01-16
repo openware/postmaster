@@ -1,9 +1,11 @@
 package mailconsumer
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 )
 
@@ -17,8 +19,8 @@ import (
 )
 
 const (
-	RoutingKey = "account.created"
-	Exchange   = "barong.events.model"
+	routingKey = "account.created"
+	exchange   = "barong.events.model"
 )
 
 func amqpURI() string {
@@ -103,7 +105,7 @@ func Run() {
 	// TODO: Check SENDGRID_API_KEY to be set on start.
 	amqpUri := amqpURI()
 
-	c := consumer.New(amqpUri, Exchange, RoutingKey)
+	c := consumer.New(amqpUri, exchange, routingKey)
 	queue := c.DeclareQueue()
 	c.BindQueue(queue)
 
@@ -123,8 +125,24 @@ func Run() {
 
 	forever := make(chan bool)
 
-	callback := func(record AccountRecord) error {
-		if err := SendEmail(record); err != nil {
+	callback := func(r AccountRecord) error {
+		tpl, err := template.ParseFiles("templates/sign_up.tpl")
+		if err != nil {
+			return err
+		}
+
+		buff := bytes.Buffer{}
+		if err := tpl.Execute(&buff, r); err != nil {
+			return err
+		}
+
+		email := eventapi.Email{
+			FromAddress: utils.GetEnv("SENDER_EMAIL", "example@domain.com"),
+			Subject:     "Confirmation Instructions",
+			Reader:      bytes.NewReader(buff.Bytes()),
+		}
+
+		if err := email.Send(r.Record); err != nil {
 			return err
 		}
 
