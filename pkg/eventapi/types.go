@@ -28,7 +28,3 @@ type Delivery struct {
 	Payload    string              `json:"payload"`
 	Signatures []DeliverySignature `json:"signatures"`
 }
-
-type Record struct {
-	Email string `json:"email"`
-}

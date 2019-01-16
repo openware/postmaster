@@ -23,7 +23,7 @@ func TestOneSigDeliveryAsJWT(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(delivery)
-	res, err := DeliveryAsJWT(amqp.Delivery{ Body: body })
+	res, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
 	assert.NoError(t, err)
 	assert.Equal(t, "x.y.z", res)
@@ -45,13 +45,12 @@ func TestMultiSigDeliveryAsJWT(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(delivery)
-	_, err := DeliveryAsJWT(amqp.Delivery{ Body: body })
+	_, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
 	assert.Equal(t, "multi signature JWT keys does not supported", err.Error())
 }
 
-func TestDeliveryAsJWT(t *testing.T) {
-	_, err := DeliveryAsJWT(amqp.Delivery{ Body: []byte("{}") })
+func TestEmptyDeliveryAsJWT(t *testing.T) {
+	_, err := DeliveryAsJWT(amqp.Delivery{Body: []byte("{}")})
 	assert.Equal(t, "no signatures to verify", err.Error())
 }
-

@@ -94,9 +94,10 @@ func ParseJWT(tokenStr string, callback func(record AccountRecord)) error {
 }
 
 func Run() {
-	// TODO: Check JWT_PUBLIC_KEY to be set on start.
-	// TODO: Check SENDGRID_API_KEY to be set on start.
 	amqpUri := amqpURI()
+
+	utils.MustGetEnv("JWT_PUBLIC_KEY")
+	utils.MustGetEnv("SENDGRID_API_KEY")
 
 	c := consumer.New(amqpUri, exchange, routingKey)
 	queue := c.DeclareQueue()
@@ -135,7 +136,7 @@ func Run() {
 			Reader:      bytes.NewReader(buff.Bytes()),
 		}
 
-		if err := email.Send(r.Record); err != nil {
+		if err := email.Send(r.Email); err != nil {
 			log.Println(err)
 		}
 	}

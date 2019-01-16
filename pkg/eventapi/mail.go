@@ -18,11 +18,11 @@ type Email struct {
 	Reader      io.Reader
 }
 
-func (e Email) Send(record Record) error {
+func (e Email) Send(email string) error {
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
 
 	from := mail.NewEmail("", e.FromAddress)
-	to := mail.NewEmail("", record.Email)
+	to := mail.NewEmail("", email)
 
 	text, err := ioutil.ReadAll(e.Reader)
 	if err != nil {

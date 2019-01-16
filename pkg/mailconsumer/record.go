@@ -3,13 +3,11 @@ package mailconsumer
 import "fmt"
 
 import (
-	"github.com/shal/pigeon/pkg/eventapi"
 	"github.com/shal/pigeon/pkg/utils"
 )
 
 type AccountRecord struct {
-	eventapi.Record
-
+	Email string `json:"email"`
 	ConfirmationToken string `json:"confirmation_token"`
 	UID               string `json:"uid"`
 	Level             int    `json:"level"`
