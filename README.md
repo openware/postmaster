@@ -30,8 +30,7 @@ $ go run ./cmd/pigeon/main.go
 | `RABBITMQ_PASSWORD` | RabbitMQ password            | *no*     | `guest`                  |
 | `SENDER_EMAIL`      | Email address of mail sender | *no*     | `example@domain.com`     |
 | `SENDER_NAME `      | Name of mail sender          | *no*     |                          |
-| `FRONTEND_DOMAIN`   | Domain of platform UI        | *no*     | `http://www.example.com` |
-
+| `CONFIRM_URL`       | Domain of platform UI        | *no*     | `http://www.example.com/accounts/confirmation?confirmation_token=#{}` |
 
 ## License
 

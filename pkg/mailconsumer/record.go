@@ -1,6 +1,8 @@
 package mailconsumer
 
-import "fmt"
+import (
+	"strings"
+)
 
 import (
 	"github.com/shal/pigeon/pkg/utils"
@@ -16,11 +18,11 @@ type AccountRecord struct {
 	FailedAttempts    int    `json:"failed_attempts"`
 }
 
-func (record AccountRecord) ConfirmationUri() string {
-	base := utils.GetEnv("FRONTEND_DOMAIN", "http://www.example.com")
-
-	return fmt.Sprintf("%s/accounts/confirmation?confirmation_token=%s",
-		base,
-		record.ConfirmationToken,
+func (r AccountRecord) ConfirmationUri() string {
+	//base := utils.GetEnv("FRONTEND_DOMAIN", "http://www.example.com")
+	url := utils.GetEnv("CONFIRM_URL",
+		"http://www.example.com/accounts/confirmation?confirmation_token=#{}",
 	)
+
+	return strings.Replace(url, "#{}", r.ConfirmationToken, 1)
 }
