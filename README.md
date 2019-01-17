@@ -20,17 +20,17 @@ $ go run ./cmd/pigeon/main.go
 
 ### Environment variables
 
-| Variable            | Description                  | Required | Default                  |
-|---------------------|------------------------------|----------|--------------------------|
-| `JWT_PUBLIC_KEY`    | RSA Public Key for decoding  | *yes*    |                          |
-| `SENDGRID_API_KEY`  | SendGrid API Key             | *yes*    |                          |
-| `RABBITMQ_HOST`     | Host of RabbitMQ daemon      | *no*     | `localhost`              |
-| `RABBITMQ_PORT`     | Port of RabbitMQ daemon      | *no*     | `5672`                   |
-| `RABBITMQ_USERNAME` | RabbitMQ username            | *no*     | `guest`                  |
-| `RABBITMQ_PASSWORD` | RabbitMQ password            | *no*     | `guest`                  |
-| `SENDER_EMAIL`      | Email address of mail sender | *no*     | `example@domain.com`     |
-| `SENDER_NAME `      | Name of mail sender          | *no*     |                          |
-| `CONFIRM_URL`       | Domain of platform UI        | *no*     | `http://www.example.com/accounts/confirmation?confirmation_token=#{}` |
+| Variable            | Description                         | Required | Default              |
+|---------------------|-------------------------------------|----------|----------------------|
+| `JWT_PUBLIC_KEY`    | RSA Public Key for decoding         | *yes*    |                      |
+| `SENDGRID_API_KEY`  | SendGrid API Key                    | *yes*    |                      |
+| `RABBITMQ_HOST`     | Host of RabbitMQ daemon             | *no*     | `localhost`          |
+| `RABBITMQ_PORT`     | Port of RabbitMQ daemon             | *no*     | `5672`               |
+| `RABBITMQ_USERNAME` | RabbitMQ username                   | *no*     | `guest`              |
+| `RABBITMQ_PASSWORD` | RabbitMQ password                   | *no*     | `guest`              |
+| `SENDER_EMAIL`      | Email address of mail sender        | *no*     | `noreply@pigeon.com` |
+| `SENDER_NAME `      | Name of mail sender                 | *no*     | `Pigeon`             |
+| `CONFIRM_URL`       | URL template for confirmation email | *no*     | `http://www.example.com/accounts/confirmation?confirmation_token=#{}` |
 
 ## License
 

@@ -58,7 +58,8 @@ func procRecord(r eventapi.Record) {
 
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
 	email := eventapi.Email{
-		FromAddress: utils.GetEnv("SENDER_EMAIL", "example@domain.com"),
+		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@pigeon.com"),
+		FromName:    utils.GetEnv("SENDER_NAME", "Pigeon"),
 		Subject:     "Confirmation Instructions",
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}

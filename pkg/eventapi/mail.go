@@ -13,6 +13,7 @@ import (
 
 type Email struct {
 	FromAddress string
+	FromName    string
 	Subject     string
 	Reader      io.Reader
 }
