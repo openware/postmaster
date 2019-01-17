@@ -2,20 +2,17 @@ package mailconsumer
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 )
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shal/pigeon/pkg/consumer"
 	"github.com/shal/pigeon/pkg/eventapi"
 	"github.com/shal/pigeon/pkg/utils"
-	"github.com/streadway/amqp"
 )
 
 const (
@@ -32,46 +29,7 @@ func amqpURI() string {
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
 
-func DeliveryAsJWT(delivery amqp.Delivery) (string, error) {
-	eventMsg := eventapi.Delivery{}
-
-	log.Printf("Delivery: %s\n", delivery.Body)
-
-	// Parse received []byte into JSON.
-	if err := json.Unmarshal(delivery.Body, &eventMsg); err != nil {
-		log.Printf("Event API Message %s", err.Error())
-	}
-
-	// Verify JWT payload.
-	if len(eventMsg.Signatures) < 1 {
-		return "", errors.New("no signatures to verify")
-	} else if len(eventMsg.Signatures) > 1 {
-		return "", errors.New("multi signature JWT keys does not supported")
-	}
-
-	// Build token from received header, payload, signatures.
-	tokenStr := fmt.Sprintf("%s.%s.%s",
-		eventMsg.Signatures[0].Protected,
-		eventMsg.Payload,
-		eventMsg.Signatures[0].Signature,
-	)
-
-	log.Printf("Token: %s\n", tokenStr)
-
-	return tokenStr, nil
-}
-
-func ParseJWT(tokenStr string, callback func(record AccountRecord)) error {
-	token, err := jwt.ParseWithClaims(tokenStr, &eventapi.Claims{}, eventapi.ValidateJWT)
-	if err != nil {
-		return err
-	}
-
-	claims, ok := token.Claims.(*eventapi.Claims)
-	if !ok || !token.Valid {
-		return errors.New("claims: invalid jwt token")
-	}
-
+func processDelivery(r map[string]interface{}) {
 	// Decode map[string]interface{} to AccountRecord.
 	acc := AccountRecord{}
 
@@ -81,16 +39,34 @@ func ParseJWT(tokenStr string, callback func(record AccountRecord)) error {
 		WeaklyTypedInput: true,
 	})
 
-	if err := dec.Decode(claims.Event.Record); err != nil {
-		return err
+	if err := dec.Decode(r); err != nil {
+		log.Println(err)
+		return
 	}
 
-	log.Println(acc)
+	tpl, err := template.ParseFiles("templates/sign_up.tpl")
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-	// Send email.
-	callback(acc)
+	buff := bytes.Buffer{}
+	if err := tpl.Execute(&buff, r); err != nil {
+		log.Println(err)
+		return
+	}
 
-	return nil
+	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
+	email := eventapi.Email{
+		FromAddress: utils.GetEnv("SENDER_EMAIL", "example@domain.com"),
+		Subject:     "Confirmation Instructions",
+		Reader:      bytes.NewReader(buff.Bytes()),
+	}
+
+	if _, err := email.Send(acc.Email, apiKey); err != nil {
+		log.Println(err)
+		return
+	}
 }
 
 func Run() {
@@ -119,37 +95,22 @@ func Run() {
 
 	forever := make(chan bool)
 
-	callback := func(r AccountRecord) {
-		tpl, err := template.ParseFiles("templates/sign_up.tpl")
-		if err != nil {
-			log.Println(err)
-		}
-
-		buff := bytes.Buffer{}
-		if err := tpl.Execute(&buff, r); err != nil {
-			log.Println(err)
-		}
-
-		email := eventapi.Email{
-			FromAddress: utils.GetEnv("SENDER_EMAIL", "example@domain.com"),
-			Subject:     "Confirmation Instructions",
-			Reader:      bytes.NewReader(buff.Bytes()),
-		}
-
-		if err := email.Send(r.Email); err != nil {
-			log.Println(err)
-		}
-	}
-
 	go func() {
 		for delivery := range deliveries {
-			jwtStr, err := DeliveryAsJWT(delivery)
+			jwtReader, err := eventapi.DeliveryAsJWT(delivery)
 
 			if err != nil {
 				log.Println(err)
+				return
 			}
 
-			if err := ParseJWT(jwtStr, callback); err != nil {
+			jwtStr, err := ioutil.ReadAll(jwtReader)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			if err := eventapi.ParseJWT(string(jwtStr), processDelivery); err != nil {
 				log.Println(err)
 			}
 		}

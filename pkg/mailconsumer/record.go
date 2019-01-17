@@ -7,7 +7,7 @@ import (
 )
 
 type AccountRecord struct {
-	Email string `json:"email"`
+	Email             string `json:"email"`
 	ConfirmationToken string `json:"confirmation_token"`
 	UID               string `json:"uid"`
 	Level             int    `json:"level"`
