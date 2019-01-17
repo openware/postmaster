@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/streadway/amqp"
 	"io"
 	"strings"
@@ -32,21 +31,4 @@ func DeliveryAsJWT(delivery amqp.Delivery) (io.Reader, error) {
 	)
 
 	return strings.NewReader(tokenStr), nil
-}
-
-func ParseJWT(tokenStr string, callback func(map[string]interface{})) error {
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, ValidateJWT)
-	if err != nil {
-		return err
-	}
-
-	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
-		return errors.New("claims: invalid jwt token")
-	}
-
-	// Send email.
-	callback(claims.Event.Record)
-
-	return nil
 }

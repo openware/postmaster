@@ -29,7 +29,7 @@ func amqpURI() string {
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
 
-func processDelivery(r map[string]interface{}) {
+func procRecord(r eventapi.Record) {
 	// Decode map[string]interface{} to AccountRecord.
 	acc := AccountRecord{}
 
@@ -104,15 +104,20 @@ func Run() {
 				return
 			}
 
-			jwtStr, err := ioutil.ReadAll(jwtReader)
+			jwt, err := ioutil.ReadAll(jwtReader)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
-			if err := eventapi.ParseJWT(string(jwtStr), processDelivery); err != nil {
+			log.Printf("Token: %s\n", string(jwt))
+
+			claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
+			if err != nil {
 				log.Println(err)
+				return
 			}
+			procRecord(claims.Event.Record)
 		}
 	}()
 

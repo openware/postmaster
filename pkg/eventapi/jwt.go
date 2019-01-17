@@ -30,3 +30,17 @@ func ValidateJWT(token *jwt.Token) (interface{}, error) {
 
 	return signingKey, nil
 }
+
+func ParseJWT(tokenStr string, keyFunc jwt.Keyfunc) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, keyFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return nil, errors.New("claims: invalid jwt token")
+	}
+
+	return claims, nil
+}

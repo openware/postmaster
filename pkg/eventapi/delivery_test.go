@@ -1,20 +1,20 @@
-package mailconsumer
+package eventapi
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
 import (
-	"github.com/shal/pigeon/pkg/eventapi"
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOneSigDeliveryAsJWT(t *testing.T) {
-	delivery := eventapi.Delivery{
+	delivery := Delivery{
 		Payload: "y",
-		Signatures: []eventapi.DeliverySignature{
+		Signatures: []DeliverySignature{
 			{
 				Protected: "x",
 				Signature: "z",
@@ -26,13 +26,13 @@ func TestOneSigDeliveryAsJWT(t *testing.T) {
 	res, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
 	assert.NoError(t, err)
-	assert.Equal(t, "x.y.z", res)
+	assert.Equal(t, strings.NewReader("x.y.z"), res)
 }
 
 func TestMultiSigDeliveryAsJWT(t *testing.T) {
-	delivery := eventapi.Delivery{
+	delivery := Delivery{
 		Payload: "y",
-		Signatures: []eventapi.DeliverySignature{
+		Signatures: []DeliverySignature{
 			{
 				Protected: "x",
 				Signature: "z",
@@ -45,12 +45,15 @@ func TestMultiSigDeliveryAsJWT(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(delivery)
-	_, err := DeliveryAsJWT(amqp.Delivery{Body: body})
+	res, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
+	assert.Nil(t, res)
 	assert.Equal(t, "multi signature JWT keys does not supported", err.Error())
 }
 
 func TestEmptyDeliveryAsJWT(t *testing.T) {
-	_, err := DeliveryAsJWT(amqp.Delivery{Body: []byte("{}")})
+	res, err := DeliveryAsJWT(amqp.Delivery{Body: []byte("{}")})
+
+	assert.Nil(t, res)
 	assert.Equal(t, "no signatures to verify", err.Error())
 }

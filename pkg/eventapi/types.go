@@ -2,10 +2,12 @@ package eventapi
 
 import "github.com/dgrijalva/jwt-go"
 
+type Record map[string]interface{}
+
 type Event struct {
-	Record  map[string]interface{} `json:"record"`
-	Changes map[string]interface{} `json:"changes"`
-	Name    string                 `json:"name"`
+	Record  Record `json:"record"`
+	Changes Record `json:"changes"`
+	Name    string `json:"name"`
 }
 
 type Claims struct {
