@@ -6,9 +6,9 @@ import (
 )
 
 func TestAccountRecordConfirmationUri(t *testing.T) {
-	res := AccountRecord{
-		ConfirmationToken: "12345",
-	}.ConfirmationUri()
+	res := AccountCreatedEvent{
+		Token: "12345",
+	}.ConfirmationURI()
 
 	assert.Contains(t, res, "12345")
 }

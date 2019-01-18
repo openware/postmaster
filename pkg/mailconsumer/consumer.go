@@ -16,10 +16,9 @@ import (
 )
 
 const (
-	routingKey = "account.created"
-	exchange   = "barong.events.model"
+	routingKey = "user.email.confirmation.token"
+	exchange   = "barong.events.system"
 )
-
 func amqpURI() string {
 	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
 	port := utils.GetEnv("RABBITMQ_PORT", "5672")
@@ -29,9 +28,9 @@ func amqpURI() string {
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
 
-func procRecord(r eventapi.Record) {
+func procRecord(r eventapi.Event) {
 	// Decode map[string]interface{} to AccountRecord.
-	acc := AccountRecord{}
+	acc := AccountCreatedEvent{}
 
 	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:          "json",
@@ -64,7 +63,7 @@ func procRecord(r eventapi.Record) {
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	if _, err := email.Send(acc.Email, apiKey); err != nil {
+	if _, err := email.Send(acc.User.Email, apiKey); err != nil {
 		log.Println(err)
 		return
 	}
@@ -118,7 +117,7 @@ func Run() {
 				log.Println(err)
 				return
 			}
-			procRecord(claims.Event.Record)
+			procRecord(claims.Event)
 		}
 	}()
 

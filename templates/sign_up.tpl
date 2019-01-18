@@ -1,8 +1,8 @@
 <html>
     <body>
-        <p>Hello {{ .Email }}</p>
+        <p>Hello {{ .User.Email }}</p>
         <p>
-            <a href="{{ .ConfirmationUri }}">Confirm your account</a>
+            <a href="{{ .ConfirmationURI }}">Confirm your account</a>
         </p>
     </body>
 </html>

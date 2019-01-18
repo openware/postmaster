@@ -19,7 +19,7 @@ type Email struct {
 }
 
 func (e Email) Send(apiKey, email string) (*rest.Response, error) {
-	from := mail.NewEmail("", e.FromAddress)
+	from := mail.NewEmail(e.FromName, e.FromAddress)
 	to := mail.NewEmail("", email)
 
 	text, err := ioutil.ReadAll(e.Reader)

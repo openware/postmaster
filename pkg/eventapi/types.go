@@ -2,13 +2,7 @@ package eventapi
 
 import "github.com/dgrijalva/jwt-go"
 
-type Record map[string]interface{}
-
-type Event struct {
-	Record  Record `json:"record"`
-	Changes Record `json:"changes"`
-	Name    string `json:"name"`
-}
+type Event map[string]interface{}
 
 type Claims struct {
 	jwt.StandardClaims
@@ -29,4 +23,13 @@ type DeliverySignature struct {
 type Delivery struct {
 	Payload    string              `json:"payload"`
 	Signatures []DeliverySignature `json:"signatures"`
+}
+
+type User struct {
+	UID   string `json:"uid"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+	Level int    `json:"level"`
+	Otp   bool   `json:"otp_enabled"`
+	State string `json:"state"`
 }
