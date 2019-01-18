@@ -63,7 +63,7 @@ func procRecord(r eventapi.Event) {
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	if _, err := email.Send(acc.User.Email, apiKey); err != nil {
+	if _, err := email.Send(apiKey, acc.User.Email); err != nil {
 		log.Println(err)
 		return
 	}
