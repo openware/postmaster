@@ -28,7 +28,7 @@ func amqpURI() string {
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
 
-func procRecord(r eventapi.Event) {
+func procRecord(r eventapi.Event) error {
 	// Decode map[string]interface{} to AccountRecord.
 	acc := AccountCreatedEvent{}
 
@@ -39,25 +39,21 @@ func procRecord(r eventapi.Event) {
 	})
 
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	if err := dec.Decode(r); err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	tpl, err := template.ParseFiles("templates/sign_up.tpl")
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	buff := bytes.Buffer{}
 	if err := tpl.Execute(&buff, acc); err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
@@ -70,9 +66,10 @@ func procRecord(r eventapi.Event) {
 	}
 
 	if _, err := email.Send(apiKey, acc.User.Email); err != nil {
-		log.Println(err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func Run() {
@@ -123,7 +120,10 @@ func Run() {
 				log.Println(err)
 				return
 			}
-			procRecord(claims.Event)
+
+			if err := procRecord(claims.Event); err != nil {
+				log.Printf("Consuming: %s\n", err.Error())
+			}
 		}
 	}()
 
