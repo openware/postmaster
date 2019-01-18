@@ -38,6 +38,11 @@ func procRecord(r eventapi.Event) {
 		WeaklyTypedInput: true,
 	})
 
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	if err := dec.Decode(r); err != nil {
 		log.Println(err)
 		return
@@ -50,12 +55,13 @@ func procRecord(r eventapi.Event) {
 	}
 
 	buff := bytes.Buffer{}
-	if err := tpl.Execute(&buff, r); err != nil {
+	if err := tpl.Execute(&buff, acc); err != nil {
 		log.Println(err)
 		return
 	}
 
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
+
 	email := eventapi.Email{
 		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@pigeon.com"),
 		FromName:    utils.GetEnv("SENDER_NAME", "Pigeon"),

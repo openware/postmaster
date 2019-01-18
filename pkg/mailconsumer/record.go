@@ -1,17 +1,15 @@
 package mailconsumer
 
-import (
-	"github.com/shal/pigeon/pkg/eventapi"
-	"strings"
-)
+import "strings"
 
 import (
+	"github.com/shal/pigeon/pkg/eventapi"
 	"github.com/shal/pigeon/pkg/utils"
 )
 
 type AccountCreatedEvent struct {
 	User  eventapi.User `json:"user"`
-	Token string        `json:"string"`
+	Token string        `json:"token"`
 }
 
 func (r AccountCreatedEvent) ConfirmationURI() string {
