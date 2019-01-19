@@ -17,6 +17,8 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /go/bin/pigeon ./cmd/pigeo
 
 FROM alpine
 
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
 COPY --from=build /go/bin/pigeon ./pigeon
