@@ -1,4 +1,4 @@
-module github.com/shal/pigeon
+module github.com/openware/postmaster
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

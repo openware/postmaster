@@ -1,1 +1,1 @@
-Pigeon was successfully deployed
+postmaster was successfully deployed

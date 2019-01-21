@@ -10,9 +10,9 @@ import (
 
 import (
 	"github.com/mitchellh/mapstructure"
-	"github.com/shal/pigeon/pkg/consumer"
-	"github.com/shal/pigeon/pkg/eventapi"
-	"github.com/shal/pigeon/pkg/utils"
+	"github.com/openware/postmaster/pkg/consumer"
+	"github.com/openware/postmaster/pkg/eventapi"
+	"github.com/openware/postmaster/pkg/utils"
 )
 
 const (
@@ -59,8 +59,8 @@ func procRecord(r eventapi.Event) error {
 	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
 
 	email := eventapi.Email{
-		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@pigeon.com"),
-		FromName:    utils.GetEnv("SENDER_NAME", "Pigeon"),
+		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@postmaster.com"),
+		FromName:    utils.GetEnv("SENDER_NAME", "postmaster"),
 		Subject:     "Confirmation Instructions",
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}

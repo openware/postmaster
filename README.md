@@ -1,4 +1,4 @@
-# Pigeon
+# postmaster
 
 > :incoming_envelope: Mail events consumer.
 
@@ -15,7 +15,7 @@ Consume mail events from barong and send emails over SMTP.
 Start worker by running command below
 
 ```sh
-$ go run ./cmd/pigeon/main.go
+$ go run ./cmd/postmaster/main.go
 ```
 
 ### Environment variables
@@ -28,8 +28,8 @@ $ go run ./cmd/pigeon/main.go
 | `RABBITMQ_PORT`     | Port of RabbitMQ daemon             | *no*     | `5672`               |
 | `RABBITMQ_USERNAME` | RabbitMQ username                   | *no*     | `guest`              |
 | `RABBITMQ_PASSWORD` | RabbitMQ password                   | *no*     | `guest`              |
-| `SENDER_EMAIL`      | Email address of mail sender        | *no*     | `noreply@pigeon.com` |
-| `SENDER_NAME `      | Name of mail sender                 | *no*     | `Pigeon`             |
+| `SENDER_EMAIL`      | Email address of mail sender        | *no*     | `noreply@postmaster.com` |
+| `SENDER_NAME `      | Name of mail sender                 | *no*     | `postmaster`             |
 | `CONFIRM_URL`       | URL template for confirmation email | *no*     | `http://www.example.com/accounts/confirmation?confirmation_token=#{}` |
 
 ## License

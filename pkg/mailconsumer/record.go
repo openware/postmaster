@@ -3,8 +3,8 @@ package mailconsumer
 import "strings"
 
 import (
-	"github.com/shal/pigeon/pkg/eventapi"
-	"github.com/shal/pigeon/pkg/utils"
+	"github.com/openware/postmaster/pkg/eventapi"
+	"github.com/openware/postmaster/pkg/utils"
 )
 
 type AccountCreatedEvent struct {

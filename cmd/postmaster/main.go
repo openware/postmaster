@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/shal/pigeon/pkg/mailconsumer"
+	"github.com/openware/postmaster/pkg/mailconsumer"
 )
 
 func main() {

@@ -13,7 +13,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /go/bin/pigeon ./cmd/pigeon/main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /go/bin/postmaster ./cmd/postmaster/main.go
 
 FROM alpine
 
@@ -21,7 +21,7 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-COPY --from=build /go/bin/pigeon ./pigeon
+COPY --from=build /go/bin/postmaster ./postmaster
 COPY templates/ templates/
 
-ENTRYPOINT ["./pigeon"]
+ENTRYPOINT ["./postmaster"]

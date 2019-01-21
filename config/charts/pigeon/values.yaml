@@ -1,11 +1,11 @@
-# Default values for pigeon.
+# Default values for postmaster.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: rubykube/pigeon
+  repository: rubykube/postmaster
   tag: latest
   pullPolicy: Always
 
@@ -22,7 +22,7 @@ app:
   vars: {}
     # SENDGRID_API_KEY: "changeme"
     # JWT_PUBLIC_KEY: "changeme"
-    # SENDER_EMAIL: "noreply@pigeon.com"
+    # SENDER_EMAIL: "noreply@postmaster.com"
 
 resources: {}
 

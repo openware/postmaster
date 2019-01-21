@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	tag       = "pigeon"
-	queueName = "pigeon.events.consumer"
+	tag       = "postmaster"
+	queueName = "postmaster.events.consumer"
 )
 
 type Consumer struct {

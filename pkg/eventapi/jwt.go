@@ -7,7 +7,7 @@ import (
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	"github.com/shal/pigeon/pkg/utils"
+	"github.com/openware/postmaster/pkg/utils"
 )
 
 func ValidateJWT(token *jwt.Token) (interface{}, error) {
