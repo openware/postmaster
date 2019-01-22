@@ -21,8 +21,27 @@ steps:
       - git config --global user.name "Kite Bot"
       - git config --global user.email "kite-bot@heliostech.fr"
       - git remote add authenticated-origin https://kite-bot:$GITHUB_API_KEY@github.com/${DRONE_REPO}
-      - bash bump.sh
+      - bash .ci/bump.sh
       - git push authenticated-origin
+      - cp VERSION .tags
     when:
       event:
         - push
+      branch:
+        - master
+
+  - name: Push image
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: quay_username
+      password:
+        from_secret: quay_password
+      repo: quay.io/openware/postmaster
+      registry: quay.io
+    when:
+      event:
+        - push
+      branch:
+        - master
+
