@@ -11,3 +11,18 @@ steps:
     when:
       event:
         - push
+
+  - name: Bump version
+    image: golang:1.11
+    environment:
+      GITHUB_API_KEY:
+        from_secret: kite_bot_key
+    commands:
+      - git config --global user.name "Kite Bot"
+      - git config --global user.email "kite-bot@heliostech.fr"
+      - git remote add authenticated-origin https://kite-bot:$GITHUB_API_KEY@github.com/${DRONE_REPO}
+      - bash bump.sh
+      - git push authenticated-origin
+    when:
+      event:
+        - push
