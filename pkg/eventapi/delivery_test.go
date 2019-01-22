@@ -22,7 +22,7 @@ func TestOneSigDeliveryAsJWT(t *testing.T) {
 		},
 	}
 
-	body, _ := json.Maropenware(delivery)
+	body, _ := json.Marshal(delivery)
 	res, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
 	assert.NoError(t, err)
@@ -44,7 +44,7 @@ func TestMultiSigDeliveryAsJWT(t *testing.T) {
 		},
 	}
 
-	body, _ := json.Maropenware(delivery)
+	body, _ := json.Marshal(delivery)
 	res, err := DeliveryAsJWT(amqp.Delivery{Body: body})
 
 	assert.Nil(t, res)
