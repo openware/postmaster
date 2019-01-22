@@ -1,0 +1,13 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: Go test
+    image: golang:1.11
+    commands:
+      - export GO111MODULE=on
+      - go mod download
+      - go test ./...
+    when:
+      event:
+        - push
