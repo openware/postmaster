@@ -1,21 +1,31 @@
 package mailconsumer
 
-import "strings"
-
 import (
-	"github.com/openware/postmaster/pkg/eventapi"
+	"strings"
+
 	"github.com/openware/postmaster/pkg/utils"
+	"github.com/openware/postmaster/pkg/eventapi"
 )
 
-type AccountCreatedEvent struct {
+type tokenReceiverEvent struct {
 	User  eventapi.User `json:"user"`
 	Token string        `json:"token"`
 }
 
-func (r AccountCreatedEvent) ConfirmationURI() string {
-	url := utils.GetEnv("CONFIRM_URL",
-		"http://www.example.com/accounts/confirmation?confirmation_token=#{}",
-	)
+// EmailConfirmationEvent is structure for processing "user.email.confirmation.token" event.
+type EmailConfirmationEvent = tokenReceiverEvent
 
-	return strings.Replace(url, "#{}", r.Token, 1)
+// ResetPasswordEvent is structure for processing "user.password.reset.token" event.
+type ResetPasswordEvent = tokenReceiverEvent
+
+// EmailConfirmationURI returns unique URL for user to confirm his identity.
+func (event EmailConfirmationEvent) EmailConfirmationURI() string {
+	url := utils.GetEnv("CONFIRM_URL", "http://example.com/#{}")
+	return strings.Replace(url, "#{}", event.Token, 1)
+}
+
+// ResetPasswordURI returns unique URL for user to reset password.
+func (event ResetPasswordEvent) ResetPasswordURI() string {
+	url := utils.GetEnv("RESET_URL", "http://example.com/#{}")
+	return strings.Replace(url, "#{}", event.Token, 1)
 }

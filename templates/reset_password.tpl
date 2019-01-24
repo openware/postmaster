@@ -2,7 +2,7 @@
     <body>
         <p>Hello {{ .User.Email }}</p>
         <p>
-            <a href="{{ .EmailConfirmationURI }}">Confirm your account</a>
+            Use this unique link to reset your password: <a href="{{ .ResetPasswordURI }}">Reset</a>
         </p>
     </body>
 </html>

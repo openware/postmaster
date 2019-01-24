@@ -8,10 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const (
-	tag       = "postmaster"
-	queueName = "postmaster.events.consumer"
-)
+const tag = "postmaster"
 
 type Consumer struct {
 	Conn       *amqp.Connection
@@ -35,7 +32,7 @@ func (c *Consumer) BindQueue(queue amqp.Queue) {
 	}
 }
 
-func (c *Consumer) DeclareQueue() amqp.Queue {
+func (c *Consumer) DeclareQueue(queueName string) amqp.Queue {
 	err := c.Channel.ExchangeDeclare(
 		c.Exchange,
 		"direct",
