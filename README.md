@@ -30,7 +30,8 @@ $ go run ./cmd/postmaster/main.go
 | `RABBITMQ_PASSWORD` | RabbitMQ password                   | *no*     | `guest`              |
 | `SENDER_EMAIL`      | Email address of mail sender        | *no*     | `noreply@postmaster.com` |
 | `SENDER_NAME `      | Name of mail sender                 | *no*     | `postmaster`             |
-| `CONFIRM_URL`       | URL template for confirmation email | *no*     | `http://www.example.com/accounts/confirmation?confirmation_token=#{}` |
+| `CONFIRM_URL`       | URL template for confirmation email | *no*     | `http://example.com/#{}` |
+| `RESET_URL`         | URL template for reset password     | *no*     | `http://example.com/#{}` |
 
 ## License
 
