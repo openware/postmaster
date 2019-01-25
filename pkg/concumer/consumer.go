@@ -1,15 +1,17 @@
-package mailconsumer
+package consumer
 
 import (
 	"fmt"
 	"log"
-)
 
-import (
+	"github.com/openware/postmaster/pkg/amqp"
 	"github.com/openware/postmaster/pkg/utils"
 )
 
-const Exchange = "barong.events.system"
+const (
+	Exchange = "barong.events.system"
+	Tag = "postmaster"
+)
 
 func amqpURI() string {
 	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
@@ -26,11 +28,11 @@ func Run() {
 	utils.MustGetEnv("JWT_PUBLIC_KEY")
 	utils.MustGetEnv("SENDGRID_API_KEY")
 
-	// Handlers.
-	ResetPasswordHandler(amqpURI)
-	EmailConfirmationHandler(amqpURI)
+	serveMux := amqp.NewServeMux(amqpURI, Tag, Exchange)
+	serveMux.HandleFunc("user.password.reset.token", ResetPasswordHandler)
+	serveMux.HandleFunc("user.email.confirmation.token", EmailConfirmationHandler)
 
-	forever := make(chan bool)
-	log.Printf(" [*] Waiting for events. To exit press CTRL+C")
-	<-forever
+	if err := serveMux.ListenAndServe(); err != nil {
+		log.Println(err)
+	}
 }

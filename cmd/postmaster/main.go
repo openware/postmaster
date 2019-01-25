@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/openware/postmaster/pkg/mailconsumer"
+	"github.com/openware/postmaster/pkg/concumer"
 )
 
 func main() {
-	mailconsumer.Run()
+	consumer.Run()
 }
