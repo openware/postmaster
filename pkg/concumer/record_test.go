@@ -1,4 +1,4 @@
-package mailconsumer
+package consumer
 
 import (
 	"github.com/stretchr/testify/assert"
