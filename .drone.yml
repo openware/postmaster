@@ -4,8 +4,9 @@ name: default
 steps:
   - name: Go test
     image: golang:1.11
+    environment:
+      GO111MODULE: on
     commands:
-      - export GO111MODULE=on
       - go mod download
       - go test ./...
     when:
@@ -17,12 +18,14 @@ steps:
     environment:
       GITHUB_API_KEY:
         from_secret: kite_bot_key
+      GO111MODULE: off
     commands:
       - git config --global user.name "Kite Bot"
       - git config --global user.email "kite-bot@heliostech.fr"
+      - go get github.com/Clever/gitsem
+      - gitsem -m "[ci skip] Bump version to %s" patch
       - git remote add authenticated-origin https://kite-bot:$GITHUB_API_KEY@github.com/${DRONE_REPO}
-      - bash .ci/bump.sh
-      - git push authenticated-origin
+      - git push --tags authenticated-origin HEAD:$DRONE_BRANCH
       - cp VERSION .tags
     when:
       event:
@@ -44,4 +47,3 @@ steps:
         - push
       branch:
         - master
-
