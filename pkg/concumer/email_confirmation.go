@@ -10,7 +10,7 @@ import (
 	"github.com/openware/postmaster/pkg/utils"
 )
 
-func EmailConfirmationHandler(event eventapi.Event)() {
+func EmailConfirmationHandler(event eventapi.Event) {
 	acc := EmailConfirmationEvent{}
 
 	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
@@ -37,16 +37,15 @@ func EmailConfirmationHandler(event eventapi.Event)() {
 		log.Println(err)
 	}
 
-	apiKey := utils.MustGetEnv("SENDGRID_API_KEY")
-
-	email := eventapi.Email{
+	email := Email{
 		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@postmaster.com"),
 		FromName:    utils.GetEnv("SENDER_NAME", "postmaster"),
+		ToAddress:   acc.User.Email,
 		Subject:     "Email Confirmation Instructions",
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	if _, err := email.Send(apiKey, acc.User.Email); err != nil {
+	if err := email.Send(); err != nil {
 		log.Println(err)
 	}
 }
