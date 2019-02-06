@@ -3,9 +3,7 @@ package eventapi
 import (
 	"encoding/base64"
 	"errors"
-)
 
-import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/openware/postmaster/pkg/utils"
 )

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/streadway/amqp"
 	"io"
 	"strings"
+
+	"github.com/streadway/amqp"
 )
 
 func DeliveryAsJWT(delivery amqp.Delivery) (io.Reader, error) {

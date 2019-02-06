@@ -26,7 +26,6 @@ func Run() {
 	amqpURI := amqpURI()
 
 	utils.MustGetEnv("JWT_PUBLIC_KEY")
-	utils.MustGetEnv("SENDGRID_API_KEY")
 
 	serveMux := amqp.NewServeMux(amqpURI, Tag, Exchange)
 	serveMux.HandleFunc("user.password.reset.token", ResetPasswordHandler)

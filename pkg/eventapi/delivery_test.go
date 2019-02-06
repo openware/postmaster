@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
-)
 
-import (
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 )
