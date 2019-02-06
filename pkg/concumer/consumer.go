@@ -10,7 +10,7 @@ import (
 
 const (
 	Exchange = "barong.events.system"
-	Tag = "postmaster"
+	Tag      = "postmaster"
 )
 
 func amqpURI() string {
