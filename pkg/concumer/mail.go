@@ -8,10 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/smtp"
-	"os"
+	"strings"
 	"text/template"
-
-	"github.com/openware/postmaster/pkg/utils"
 )
 
 type Email struct {
@@ -20,26 +18,39 @@ type Email struct {
 	ToAddress   string
 	Subject     string
 	Reader      io.Reader
+
+}
+
+type SMTPConf struct {
+	Username string
+	Password string
+	Host string
+	Port string
+}
+
+func (conf SMTPConf) URL() string {
+	return fmt.Sprintf("%s:%s", conf.Host, conf.Port)
+}
+
+type EmailSender struct {
+	conf *SMTPConf
+	email *Email
+	send func(string, smtp.Auth, string, []string, []byte) error
+}
+
+func NewEmailSender(conf SMTPConf, email Email) *EmailSender {
+	return &EmailSender{&conf, &email, smtp.SendMail}
 }
 
 // Compatible with any SMTP server, either "Mailcather" or "SendGrid".
-func (e Email) Send() error {
+func (e *EmailSender) Send() error {
 	// Password is required.
-	password, exist := os.LookupEnv("SMTP_PASSWORD")
-	if !exist {
-		return errors.New("password is not set")
+	if strings.TrimSpace(e.conf.Password) == "" {
+		return errors.New("password is empty")
 	}
 
-	host := utils.GetEnv("SMTP_HOST", "smtp.sendgrid.net")
-	port := utils.GetEnv("SMTP_PORT", "25")
-	username := utils.GetEnv("SMTP_USER", "apikey")
-	recipients := []string{e.ToAddress}
-
-	URL := fmt.Sprintf("%s:%s", host, port)
-
-	text, err := ioutil.ReadAll(e.Reader)
-	if err != nil {
-		return err
+	if e.email == nil {
+		return errors.New("email is nil")
 	}
 
 	tpl, err := template.ParseFiles("templates/email.tpl")
@@ -48,15 +59,22 @@ func (e Email) Send() error {
 	}
 
 	buff := bytes.Buffer{}
-	if err := tpl.Execute(&buff, e); err != nil {
+	if err := tpl.Execute(&buff, e.email); err != nil {
 		log.Println(err)
+	}
+
+	text, err := ioutil.ReadAll(e.email.Reader)
+	if err != nil {
+		return err
 	}
 
 	msg := append(buff.Bytes(), "\r\n"...)
 	msg = append(msg, text...)
 
-	auth := smtp.PlainAuth("", username, password, host)
-	if err := smtp.SendMail(URL, auth, e.FromAddress, recipients, msg); err != nil {
+	recipients := []string{e.email.ToAddress}
+
+	auth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, e.conf.Host)
+	if err := e.send(e.conf.URL(), auth, e.email.FromAddress, recipients, msg); err != nil {
 		return err
 	}
 

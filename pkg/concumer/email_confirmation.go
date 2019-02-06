@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"log"
+	"os"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/openware/postmaster/pkg/eventapi"
@@ -45,7 +46,19 @@ func EmailConfirmationHandler(event eventapi.Event) {
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	if err := email.Send(); err != nil {
+	password, exist := os.LookupEnv("SMTP_PASSWORD")
+	if !exist {
+		log.Println("password is not set")
+	}
+
+	conf := SMTPConf{
+		Host: utils.GetEnv("SMTP_HOST", "smtp.sendgrid.net"),
+		Port: utils.GetEnv("SMTP_PORT", "25"),
+		Username: utils.GetEnv("SMTP_USER", "apikey"),
+		Password: password,
+	}
+
+	if err := NewEmailSender(conf, email).Send(); err != nil {
 		log.Println(err)
 	}
 }
