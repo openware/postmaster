@@ -1,8 +1,9 @@
 package consumer
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEmailConfirmationEvent_EmailConfirmationURI(t *testing.T) {

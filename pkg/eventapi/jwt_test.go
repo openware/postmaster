@@ -1,10 +1,11 @@
 package eventapi
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseJWT(t *testing.T) {

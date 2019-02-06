@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"log"
-)
 
-import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/openware/postmaster/pkg/eventapi"
 	"github.com/openware/postmaster/pkg/utils"
