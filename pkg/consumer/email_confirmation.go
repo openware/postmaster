@@ -27,7 +27,8 @@ func EmailConfirmationHandler(event eventapi.Event) {
 		log.Println(err)
 	}
 
-	tpl, err := template.ParseFiles("templates/sign_up.tpl")
+	templatePath := utils.GetEnv("SIGN_UP_TEMPLATE_PATH", "templates/sign_up.tpl")
+	tpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		log.Println(err)
 	}

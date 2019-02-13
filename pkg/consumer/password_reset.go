@@ -26,7 +26,8 @@ func ResetPasswordHandler(event eventapi.Event) {
 		log.Println(err)
 	}
 
-	tpl, err := template.ParseFiles("templates/reset_password.tpl")
+	templatePath := utils.GetEnv("PASSWORD_RESET_TEMPLATE_PATH", "templates/password_reset.tpl")
+	tpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		log.Println(err)
 	}
