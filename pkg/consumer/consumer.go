@@ -25,7 +25,10 @@ func amqpURI() string {
 func Run() {
 	amqpURI := amqpURI()
 
+	// List of required environment variables.
 	utils.MustGetEnv("JWT_PUBLIC_KEY")
+	utils.MustGetEnv("SENDER_EMAIL")
+	utils.MustGetEnv("SMTP_PASSWORD")
 
 	serveMux := amqp.NewServeMux(amqpURI, Tag, Exchange)
 	serveMux.HandleFunc("user.password.reset.token", ResetPasswordHandler)

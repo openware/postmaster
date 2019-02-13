@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"log"
-	"os"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/openware/postmaster/pkg/eventapi"
@@ -39,18 +38,14 @@ func EmailConfirmationHandler(event eventapi.Event) {
 	}
 
 	email := Email{
-		FromAddress: utils.GetEnv("SENDER_EMAIL", "noreply@postmaster.com"),
+		FromAddress: utils.MustGetEnv("SENDER_EMAIL"),
 		FromName:    utils.GetEnv("SENDER_NAME", "postmaster"),
 		ToAddress:   acc.User.Email,
 		Subject:     "Email Confirmation Instructions",
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	password, exist := os.LookupEnv("SMTP_PASSWORD")
-	if !exist {
-		log.Println("password is not set")
-	}
-
+	password := utils.MustGetEnv("SMTP_PASSWORD")
 	conf := SMTPConf{
 		Host: utils.GetEnv("SMTP_HOST", "smtp.sendgrid.net"),
 		Port: utils.GetEnv("SMTP_PORT", "25"),
