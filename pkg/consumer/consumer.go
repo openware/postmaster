@@ -2,16 +2,27 @@ package consumer
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/openware/postmaster/pkg/amqp"
 	"github.com/openware/postmaster/pkg/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	Exchange = "barong.events.system"
 	Tag      = "postmaster"
 )
+
+func init() {
+	if _, exist := os.LookupEnv("DEBUG"); exist {
+		log.SetLevel(log.TraceLevel)
+		return
+	}
+
+	log.SetLevel(log.InfoLevel)
+}
+
 
 func amqpURI() string {
 	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
@@ -35,6 +46,6 @@ func Run() {
 	serveMux.HandleFunc("user.email.confirmation.token", EmailConfirmationHandler)
 
 	if err := serveMux.ListenAndServe(); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }

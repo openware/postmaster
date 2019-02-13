@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/smtp"
 	"strings"
 	"text/template"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Email struct {
@@ -18,14 +19,13 @@ type Email struct {
 	ToAddress   string
 	Subject     string
 	Reader      io.Reader
-
 }
 
 type SMTPConf struct {
 	Username string
 	Password string
-	Host string
-	Port string
+	Host     string
+	Port     string
 }
 
 func (conf SMTPConf) URL() string {
@@ -33,9 +33,9 @@ func (conf SMTPConf) URL() string {
 }
 
 type EmailSender struct {
-	conf *SMTPConf
+	conf  *SMTPConf
 	email *Email
-	send func(string, smtp.Auth, string, []string, []byte) error
+	send  func(string, smtp.Auth, string, []string, []byte) error
 }
 
 func NewEmailSender(conf SMTPConf, email Email) *EmailSender {
@@ -53,14 +53,17 @@ func (e *EmailSender) Send() error {
 		return errors.New("email is nil")
 	}
 
+	log.Debugln("Parsing email template file: templates/email.tpl")
+
 	tpl, err := template.ParseFiles("templates/email.tpl")
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 
+	log.Debugln("Executing email template file: templates/email.tpl")
 	buff := bytes.Buffer{}
 	if err := tpl.Execute(&buff, e.email); err != nil {
-		log.Println(err)
+		return err
 	}
 
 	text, err := ioutil.ReadAll(e.email.Reader)
@@ -72,6 +75,10 @@ func (e *EmailSender) Send() error {
 	msg = append(msg, text...)
 
 	recipients := []string{e.email.ToAddress}
+
+	log.WithFields(log.Fields{
+		"email": e,
+	}).Debugln("Authenticating to mail service")
 
 	auth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, e.conf.Host)
 	if err := e.send(e.conf.URL(), auth, e.email.FromAddress, recipients, msg); err != nil {

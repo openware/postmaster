@@ -3,10 +3,10 @@ package amqp
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"sync"
 
 	"github.com/openware/postmaster/pkg/eventapi"
+	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -90,28 +90,33 @@ func (mux *ServeMux) declareListener(chann *amqp.Channel, queue amqp.Queue, hand
 	go func() {
 
 		if err != nil {
-			log.Panicf("consuming: %s", err.Error())
+			log.Panicf("Consuming: %s\n", err.Error())
 		}
 
 		for delivery := range deliveries {
+			log.WithFields(log.Fields{
+				"delivery": delivery,
+			}).Debugln("Received delivery")
+
 			jwtReader, err := eventapi.DeliveryAsJWT(delivery)
 
 			if err != nil {
-				log.Println(err)
+				log.Errorln(err)
 				return
 			}
 
 			jwt, err := ioutil.ReadAll(jwtReader)
 			if err != nil {
-				log.Println(err)
+				log.Errorln(err)
 				return
 			}
 
-			log.Printf("Token: %s\n", string(jwt))
+			log.WithFields(log.Fields{"jwt": string(jwt)}).Debugln("Parsed token")
+			log.Debugln("Validating and decoding JWT token")
 
 			claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
 			if err != nil {
-				log.Println(err)
+				log.Errorln(err)
 				return
 			}
 
@@ -127,7 +132,7 @@ func (mux *ServeMux) ListenAndServe() error {
 	if err != nil {
 		log.Panicf("Dial %s", err.Error())
 	} else {
-		log.Printf("Successfully connected to %s\n", mux.addr)
+		log.Info("Successfully connected to %s\n", mux.addr)
 	}
 
 	// Each event will have own: channel, queue, consumer.
@@ -147,14 +152,14 @@ func (mux *ServeMux) ListenAndServe() error {
 			return fmt.Errorf("queue: %s", err.Error())
 		}
 
-		log.Printf("Listening for %s...\n", k)
+		log.Info("Listening for %s...\n", k)
 		mux.declareListener(channel, *queue, v.h)
 	}
 
 	// @Ali: We can recover panics here.
 
 	forever := make(chan bool)
-	fmt.Printf("Waiting for events. To exit press CTRL+C")
+	log.Info("Waiting for events. To exit press CTRL+C")
 	<-forever
 
 	return nil

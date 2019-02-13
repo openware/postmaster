@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"fmt"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // MustGetEnv returns error, if variable was not set.
@@ -11,7 +12,7 @@ func MustGetEnv(name string) string {
 	value, exist := os.LookupEnv(name)
 
 	if !exist {
-		panic(fmt.Sprintf("Environment variable %s does not set", name))
+		log.WithFields(log.Fields{"env": name}).Panicln("Environment variable does not set")
 	}
 
 	return value
