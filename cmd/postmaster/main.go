@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/openware/postmaster/pkg/concumer"
+	"github.com/openware/postmaster/pkg/consumer"
 )
 
 func main() {
