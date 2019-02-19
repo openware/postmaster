@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/openware/postmaster/pkg/env"
 	"github.com/openware/postmaster/pkg/eventapi"
-	"github.com/openware/postmaster/pkg/utils"
 )
 
 func EmailConfirmationHandler(event eventapi.Event) {
@@ -27,7 +27,7 @@ func EmailConfirmationHandler(event eventapi.Event) {
 		log.Println(err)
 	}
 
-	templatePath := utils.GetEnv("SIGN_UP_TEMPLATE_PATH", "templates/sign_up.tpl")
+	templatePath := env.FetchDefault("SIGN_UP_TEMPLATE_PATH", "templates/sign_up.tpl")
 	tpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		log.Println(err)
@@ -39,18 +39,18 @@ func EmailConfirmationHandler(event eventapi.Event) {
 	}
 
 	email := Email{
-		FromAddress: utils.MustGetEnv("SENDER_EMAIL"),
-		FromName:    utils.GetEnv("SENDER_NAME", "postmaster"),
+		FromAddress: env.Must(env.Fetch("SENDER_EMAIL")),
+		FromName:    env.FetchDefault("SENDER_NAME", "postmaster"),
 		ToAddress:   acc.User.Email,
 		Subject:     "Email Confirmation Instructions",
 		Reader:      bytes.NewReader(buff.Bytes()),
 	}
 
-	password := utils.MustGetEnv("SMTP_PASSWORD")
+	password := env.Must(env.Fetch("SMTP_PASSWORD"))
 	conf := SMTPConf{
-		Host: utils.GetEnv("SMTP_HOST", "smtp.sendgrid.net"),
-		Port: utils.GetEnv("SMTP_PORT", "25"),
-		Username: utils.GetEnv("SMTP_USER", "apikey"),
+		Host: env.FetchDefault("SMTP_HOST", "smtp.sendgrid.net"),
+		Port: env.FetchDefault("SMTP_PORT", "25"),
+		Username: env.FetchDefault("SMTP_USER", "apikey"),
 		Password: password,
 	}
 
