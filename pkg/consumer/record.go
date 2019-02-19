@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/openware/postmaster/pkg/eventapi"
-	"github.com/openware/postmaster/pkg/utils"
+	"github.com/openware/postmaster/pkg/env"
 )
 
 type tokenReceiverEvent struct {
@@ -20,12 +20,12 @@ type ResetPasswordEvent = tokenReceiverEvent
 
 // EmailConfirmationURI returns unique URL for user to confirm his identity.
 func (event EmailConfirmationEvent) EmailConfirmationURI() string {
-	url := utils.GetEnv("CONFIRM_URL", "http://example.com/#{}")
+	url := env.FetchDefault("CONFIRM_URL", "http://example.com/#{}")
 	return strings.Replace(url, "#{}", event.Token, 1)
 }
 
 // ResetPasswordURI returns unique URL for user to reset password.
 func (event ResetPasswordEvent) ResetPasswordURI() string {
-	url := utils.GetEnv("RESET_URL", "http://example.com/#{}")
+	url := env.FetchDefault("RESET_URL", "http://example.com/#{}")
 	return strings.Replace(url, "#{}", event.Token, 1)
 }

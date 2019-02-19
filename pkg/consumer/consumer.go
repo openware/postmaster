@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/openware/postmaster/pkg/amqp"
-	"github.com/openware/postmaster/pkg/utils"
+	"github.com/openware/postmaster/pkg/env"
 )
 
 const (
@@ -14,10 +14,10 @@ const (
 )
 
 func amqpURI() string {
-	host := utils.GetEnv("RABBITMQ_HOST", "localhost")
-	port := utils.GetEnv("RABBITMQ_PORT", "5672")
-	username := utils.GetEnv("RABBITMQ_USERNAME", "guest")
-	password := utils.GetEnv("RABBITMQ_PASSWORD", "guest")
+	host := env.FetchDefault("RABBITMQ_HOST", "localhost")
+	port := env.FetchDefault("RABBITMQ_PORT", "5672")
+	username := env.FetchDefault("RABBITMQ_USERNAME", "guest")
+	password := env.FetchDefault("RABBITMQ_PASSWORD", "guest")
 
 	return fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 }
@@ -26,9 +26,9 @@ func Run() {
 	amqpURI := amqpURI()
 
 	// List of required environment variables.
-	utils.MustGetEnv("JWT_PUBLIC_KEY")
-	utils.MustGetEnv("SENDER_EMAIL")
-	utils.MustGetEnv("SMTP_PASSWORD")
+	env.Must(env.Fetch("JWT_PUBLIC_KEY"))
+	env.Must(env.Fetch("SENDER_EMAIL"))
+	env.Must(env.Fetch("SMTP_PASSWORD"))
 
 	serveMux := amqp.NewServeMux(amqpURI, Tag, Exchange)
 	serveMux.HandleFunc("user.password.reset.token", ResetPasswordHandler)

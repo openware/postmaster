@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/openware/postmaster/pkg/utils"
+	"github.com/openware/postmaster/pkg/env"
 )
 
 func ValidateJWT(token *jwt.Token) (interface{}, error) {
@@ -13,7 +13,7 @@ func ValidateJWT(token *jwt.Token) (interface{}, error) {
 		return nil, errors.New("unexpected signing method")
 	}
 
-	encPublicKey := utils.MustGetEnv("JWT_PUBLIC_KEY")
+	encPublicKey := env.Must(env.Fetch("JWT_PUBLIC_KEY"))
 	publicKey, err := base64.StdEncoding.DecodeString(encPublicKey)
 
 	if err != nil {
