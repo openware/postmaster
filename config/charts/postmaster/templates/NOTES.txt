@@ -1,1 +1,0 @@
-postmaster was successfully deployed
