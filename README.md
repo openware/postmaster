@@ -1,5 +1,7 @@
 # postmaster
 
+[![Build Status](https://ci.microkube.com/api/badges/openware/postmaster/status.svg)](https://ci.microkube.com/openware/postmaster)
+
 > :incoming_envelope: Mail events consumer.
 
 [Barong](https://www.github.com/rubykube/barong) Event API Client.
@@ -32,23 +34,7 @@ $ go run ./cmd/postmaster/main.go
 | `SMTP_HOST`         | Host of SMTP server                  | *no*     | `smtp.sendgrid.net`  |
 | `SMTP_USER`         | User used for auth to SMTP           | *no*     | `apikey`             |
 | `SENDER_EMAIL`      | Email address of mail sender         | *yes*    |                      |
-| `SENDER_NAME `      | Name of mail sender                  | *no*     | `Postmaster`                   |
-| `CONFIRM_URL`       | URL template for confirmation email  | *no*     | `http://example.com/#{}`       |
-| `RESET_URL`         | URL template for reset password      | *no*     | `http://example.com/#{}`       |
-| `SIGN_UP_TEMPLATE_PATH`        | Path to file with content | *no*     | `templates/sign_up.tpl`        |
-| `PASSWORD_RESET_TEMPLATE_PATH` | Path to file with content | *no*     | `templates/password_reset.tpl` |
-
-### Custom Emails
-
-There is an ability to create custom message per event.
-
-Mount file to container and export environment variable with it's path.
-
-Supported events:
-- Sign Up - `SIGN_UP_TEMPLATE_PATH`
-- Password Reset - `PASSWORD_RESET_TEMPLATE_PATH`
-
-We are using `EVENT_NAME_TEMPLATE_PATH` convention for variables with template paths.
+| `SENDER_NAME `      | Name of mail sender                  | *no*     | `Postmaster`             |
 
 ## License
 

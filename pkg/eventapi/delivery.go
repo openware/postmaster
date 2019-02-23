@@ -10,6 +10,22 @@ import (
 	"github.com/streadway/amqp"
 )
 
+type DeliverySignatureHeader struct {
+	Kid string `json:"kid,omitempty"`
+}
+
+type DeliverySignature struct {
+	Protected string                  `json:"protected"`
+	Signature string                  `json:"signature"`
+	Header    DeliverySignatureHeader `json:"header,omitempty"`
+}
+
+// Structure of Event API Message.
+type Delivery struct {
+	Payload    string              `json:"payload"`
+	Signatures []DeliverySignature `json:"signatures"`
+}
+
 func DeliveryAsJWT(delivery amqp.Delivery) (io.Reader, error) {
 	eventMsg := Delivery{}
 

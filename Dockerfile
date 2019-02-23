@@ -22,6 +22,7 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 WORKDIR /app
 
 COPY --from=build /go/bin/postmaster ./postmaster
+COPY config/ config/
 COPY templates/ templates/
 
-ENTRYPOINT ["./postmaster"]
+ENTRYPOINT ["./postmaster", "-config", "config/postmaster.yml"]
