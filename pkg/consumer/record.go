@@ -3,8 +3,8 @@ package consumer
 import (
 	"strings"
 
-	"github.com/openware/postmaster/pkg/eventapi"
 	"github.com/openware/postmaster/pkg/env"
+	"github.com/openware/postmaster/pkg/eventapi"
 )
 
 type tokenReceiverEvent struct {

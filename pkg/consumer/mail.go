@@ -18,14 +18,13 @@ type Email struct {
 	ToAddress   string
 	Subject     string
 	Reader      io.Reader
-
 }
 
 type SMTPConf struct {
 	Username string
 	Password string
-	Host string
-	Port string
+	Host     string
+	Port     string
 }
 
 func (conf SMTPConf) URL() string {
@@ -33,9 +32,9 @@ func (conf SMTPConf) URL() string {
 }
 
 type EmailSender struct {
-	conf *SMTPConf
+	conf  *SMTPConf
 	email *Email
-	send func(string, smtp.Auth, string, []string, []byte) error
+	send  func(string, smtp.Auth, string, []string, []byte) error
 }
 
 func NewEmailSender(conf SMTPConf, email Email) *EmailSender {

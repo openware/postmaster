@@ -8,6 +8,13 @@ import (
 	"github.com/openware/postmaster/pkg/env"
 )
 
+type Event map[string]interface{}
+
+type Claims struct {
+	jwt.StandardClaims
+	Event Event `json:"event"`
+}
+
 func ValidateJWT(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 		return nil, errors.New("unexpected signing method")

@@ -1,9 +1,10 @@
 package consumer
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/smtp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type emailRecorder struct {

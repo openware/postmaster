@@ -31,6 +31,6 @@ func FetchDefault(key, fallback string) string {
 	if value, err := Fetch(key); err == nil {
 		return value
 	}
-	
+
 	return fallback
 }

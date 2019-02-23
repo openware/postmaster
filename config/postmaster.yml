@@ -1,0 +1,29 @@
+amqp:
+  tag: postmaster
+  exchange: barong.events.system
+
+languages:
+- code: EN
+  name: English
+- code: RU
+  name: Russian
+
+events:
+- name: Email Confirmation
+  key: user.email.confirmation.token
+  templates:
+    EN:
+      subject: Registration Confirmation
+      template_path: templates/en/email_confirmation.tpl
+    RU:
+      subject: Подтверждение Регистрации
+      template_path: templates/ru/email_confirmation.tpl
+- name: Password Reset
+  key: user.password.reset.token
+  templates:
+    EN:
+      subject: Password Reset
+      template_path: templates/en/password_reset.tpl
+    RU:
+      subject: Сброс Пароля
+      template_path: templates/ru/password_reset.tpl
