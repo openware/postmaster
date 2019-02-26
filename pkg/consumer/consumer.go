@@ -57,8 +57,11 @@ func Run(path string) {
 	requireEnvs()
 
 	serveMux := amqp.NewServeMux(amqpURI(), conf.AMQP.Tag, conf.AMQP.Exchange)
-	for _, eventConf := range conf.Events {
+	for id := range conf.Events {
+		eventConf := conf.Events[id]
 		serveMux.HandleFunc(eventConf.Key, func(event eventapi.Event) {
+			log.Printf("Processing event \"%s\n", eventConf.Key)
+
 			usr, err := eventapi.Unmarshal(event)
 			if err != nil {
 				log.Println(err)
