@@ -3,7 +3,7 @@
     <p>Hello {{ .user.email }}!</p>
     <p>
       Use this unique link to reset your password:
-      <a href="http://www.example.com/{{ .token }}">Reset</a>
+      <a href="{{ .domain}}/accounts/password_reset?reset_token={{ .token }}&lang=en">Reset</a>
     </p>
   </body>
 </html>
