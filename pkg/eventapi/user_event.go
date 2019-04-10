@@ -16,6 +16,7 @@ type User struct {
 type UserEvent struct {
 	User     User   `json:"user"`
 	Language string `json:"language"`
+	Domain   string `json:"domain"`
 }
 
 func Unmarshal(event Event) (*UserEvent, error) {
