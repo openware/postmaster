@@ -130,6 +130,8 @@ func (mux *ServeMux) ListenAndServe() error {
 		log.Printf("Successfully connected to %s\n", mux.addr)
 	}
 
+	notify := conn.NotifyClose(make(chan *amqp.Error))
+
 	// Each event will have own: channel, queue, consumer.
 	for k, v := range mux.m {
 		channel, err := conn.Channel()
@@ -153,11 +155,9 @@ func (mux *ServeMux) ListenAndServe() error {
 
 	// @Ali: We can recover panics here.
 
-	forever := make(chan bool)
 	fmt.Printf("Waiting for events. To exit press CTRL+C")
-	<-forever
 
-	return nil
+	return <-notify
 }
 
 func (mux *ServeMux) Handle(routingKey string, handler Handler) {
