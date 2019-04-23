@@ -5,9 +5,15 @@ import (
 	"io/ioutil"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/openware/postmaster/pkg/eventapi"
 	"github.com/streadway/amqp"
+)
+
+const (
+	MaxRetry uint8 = 10
+	WaiTime = 30
 )
 
 type muxEntry struct {
@@ -21,6 +27,8 @@ type ServeMux struct {
 	addr     string
 	mu       sync.RWMutex
 	m        map[string]muxEntry
+
+	retries uint8
 }
 
 func NewServeMux(addr, tag, exchange string) *ServeMux {
@@ -120,15 +128,15 @@ func (mux *ServeMux) declareListener(chann *amqp.Channel, queue amqp.Queue, hand
 	}()
 }
 
-func (mux *ServeMux) ListenAndServe() error {
-	// Create listeners for each mux entry.
-
+func (mux *ServeMux) listen() error {
 	conn, err := amqp.Dial(mux.addr)
 	if err != nil {
-		log.Panicf("Dial %s", err.Error())
-	} else {
-		log.Printf("Successfully connected to %s\n", mux.addr)
+		return err
 	}
+
+	// Everything is OK with connection.
+	log.Printf("Successfully connected to %s\n", mux.addr)
+	mux.retries = 1
 
 	notify := conn.NotifyClose(make(chan *amqp.Error))
 
@@ -155,9 +163,37 @@ func (mux *ServeMux) ListenAndServe() error {
 
 	// @Ali: We can recover panics here.
 
-	fmt.Printf("Waiting for events. To exit press CTRL+C")
+	log.Printf("Waiting for events...\n")
 
-	return <-notify
+	connErr := <-notify
+	if err := conn.Close(); err != nil {
+		log.Println(err)
+	}
+
+	return connErr
+}
+// ListenAndServe listens messages from rabbitmq.
+// Matches special handler for message.
+// Tries to establish connection 10 times, one try per 10 second, then returns error.
+func (mux *ServeMux) ListenAndServe() error {
+	var err error
+
+	for mux.retries <= MaxRetry {
+		if mux.retries != 0 {
+			log.Printf("[ERROR] Try #%d...\n",  mux.retries)
+		}
+
+		err = mux.listen()
+
+		log.Printf("[ERROR] %s \n", err)
+		mux.retries += 1
+
+		log.Printf("[RECOVER] Sleeping for %d seconds\n", WaiTime)
+		time.Sleep(WaiTime * time.Second)
+		log.Println("[RECOVER] Awake!")
+	}
+
+	return err
 }
 
 func (mux *ServeMux) Handle(routingKey string, handler Handler) {
