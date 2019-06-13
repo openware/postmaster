@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -121,35 +120,34 @@ func TestEvent_Template(t *testing.T) {
 
 func TestTemplate_Content(t *testing.T) {
 	t.Run("has only template", func(t *testing.T) {
-		temp := FakeTemplate()
-		temp.Template = "{{ .Test }}"
+		tmp := FakeTemplate()
+		tmp.Template = "{{ .Test }}"
 
 		data := NewFakeData("OpenWare")
-		result, err := temp.Content(&data)
+		result, err := tmp.Content(&data)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "OpenWare", string(result))
 	})
 
 	t.Run("has only template path", func(t *testing.T) {
-		temp := FakeTemplate()
-		// TODO: Rewrite using ioutil.Tempfile.
-		temp.TemplatePath = templatePath
+		tmp := FakeTemplate()
+		tmp.TemplatePath = templatePath
 
 		data := NewFakeData("OpenWare")
-		result, err := temp.Content(&data)
+		result, err := tmp.Content(&data)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "OpenWare", string(result))
 	})
 
 	t.Run("has both template and template path", func(t *testing.T) {
-		temp := FakeTemplate()
-		temp.TemplatePath = templatePath
-		temp.Template = "Nothing"
+		tmp := FakeTemplate()
+		tmp.TemplatePath = templatePath
+		tmp.Template = "Nothing"
 
 		data := NewFakeData("OpenWare")
-		result, err := temp.Content(&data)
+		result, err := tmp.Content(&data)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "Nothing", string(result))
@@ -164,6 +162,7 @@ func TestLanguage_Valid(t *testing.T) {
 		lang := Language{
 			Name: name,
 		}
+
 		assert.False(t, lang.Valid())
 	})
 
@@ -189,10 +188,7 @@ func TestValidate(t *testing.T) {
 		tmp := ExampleConfig()
 		tmp.Languages[0].Code = strings.ToLower(tmp.Languages[0].Code)
 
-		configAsBytes, err := yaml.Marshal(tmp)
-		assert.NoError(t, err)
-
-		res, err := Validate(bytes.NewReader(configAsBytes))
+		res, err := tmp.Validate()
 		assert.Error(t, err)
 		assert.False(t, res)
 	})
@@ -201,30 +197,15 @@ func TestValidate(t *testing.T) {
 		tmp := ExampleConfig()
 		tmp.Events[0].Templates = make(map[string]Template, 0)
 
-		configAsBytes, err := yaml.Marshal(tmp)
-		assert.NoError(t, err)
-
-		res, err := Validate(bytes.NewReader(configAsBytes))
+		res, err := tmp.Validate()
 
 		assert.Error(t, err)
 		assert.False(t, res)
 	})
 
-	t.Run("no lower cased language codes", func(t *testing.T) {
-		configAsBytes, err := yaml.Marshal(ExampleConfig())
-		assert.NoError(t, err)
-
-		res, err := Validate(bytes.NewReader(configAsBytes))
-
-		assert.NoError(t, err)
-		assert.True(t, res)
-	})
-
 	t.Run("default should be valid", func(t *testing.T) {
-		file, err := os.Open(configPath)
-		assert.NoError(t, err)
-
-		valid, err := Validate(file)
+		tmp := ExampleConfig()
+		valid, err := tmp.Validate()
 
 		assert.NoError(t, err)
 		assert.True(t, valid)

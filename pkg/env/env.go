@@ -3,12 +3,17 @@ package env
 import (
 	"fmt"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
-// Must(env.Fetch( panics in case of error.
+var (
+	Logger = log.Logger
+)
+
 func Must(value string, err error) string {
 	if err != nil {
-		panic(err.Error())
+		Logger.Fatal().Msg(err.Error())
 	}
 
 	return value

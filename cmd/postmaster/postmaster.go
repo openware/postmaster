@@ -6,12 +6,15 @@ import (
 	"github.com/openware/postmaster/pkg/consumer"
 )
 
+const (
+	path = "config/postmaster.yml"
+)
+
+var (
+	config = flag.String("config", path, "Path to postmaster config file")
+)
+
 func main() {
-	config := flag.String(
-		"config",
-		"config/postmaster.yml",
-		"Path to postmaster config file",
-	)
 	flag.Parse()
 
 	consumer.Run(*config)
