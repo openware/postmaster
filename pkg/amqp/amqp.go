@@ -3,17 +3,18 @@ package amqp
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"sync"
 	"time"
 
-	"github.com/openware/postmaster/pkg/eventapi"
+	"github.com/rs/zerolog"
 	"github.com/streadway/amqp"
+
+	"github.com/openware/postmaster/pkg/eventapi"
 )
 
 const (
-	MaxRetry uint8 = 10
-	WaiTime = 30
+	MaxRetry = 10
+	WaiTime  = 30
 )
 
 type muxEntry struct {
@@ -22,6 +23,8 @@ type muxEntry struct {
 }
 
 type ServeMux struct {
+	Logger zerolog.Logger
+
 	exchange string
 	tag      string
 	addr     string
@@ -84,48 +87,48 @@ func (mux *ServeMux) declareExchange(channel *amqp.Channel) error {
 	return err
 }
 
-func (mux *ServeMux) declareListener(chann *amqp.Channel, queue amqp.Queue, handler Handler) {
-	deliveries, err := chann.Consume(
-		queue.Name,
-		mux.tag,
-		true,
-		true,
-		false,
-		false,
-		nil,
-	)
+func (mux *ServeMux) ListenQueue(
+	deliveries <-chan amqp.Delivery,
+	handler Handler,
+	key string,
+) {
+	for {
+		delivery, ok := <-deliveries
+			if !ok {
+				mux.Logger.Error().Msgf("stopped listening %s", key)
+				return
+			}
 
-	go func() {
+			mux.Logger.Debug().
+				RawJSON("delivery", delivery.Body).
+				Msg("delivery received")
 
-		if err != nil {
-			log.Panicf("consuming: %s", err.Error())
-		}
-
-		for delivery := range deliveries {
 			jwtReader, err := eventapi.DeliveryAsJWT(delivery)
-
 			if err != nil {
-				log.Println(err)
+				mux.Logger.Error().Err(err).Msg("")
 				return
 			}
 
 			jwt, err := ioutil.ReadAll(jwtReader)
 			if err != nil {
-				log.Println(err)
+				mux.Logger.Error().Err(err).Msg("")
 				return
 			}
 
-			log.Printf("Token: %s\n", string(jwt))
+			mux.Logger.Debug().
+				Str("token", string(jwt)).
+				Msg("token 	received")
 
 			claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
 			if err != nil {
-				log.Println(err)
+				mux.Logger.Debug().
+					Str("token", string(jwt)).
+					Msg("validation failed")
 				return
 			}
 
 			handler.ServeAMQP(claims.Event)
-		}
-	}()
+	}
 }
 
 func (mux *ServeMux) listen() error {
@@ -135,7 +138,7 @@ func (mux *ServeMux) listen() error {
 	}
 
 	// Everything is OK with connection.
-	log.Printf("Successfully connected to %s\n", mux.addr)
+	mux.Logger.Info().Msgf("successfully connected to %s", mux.addr)
 	mux.retries = 1
 
 	notify := conn.NotifyClose(make(chan *amqp.Error))
@@ -157,21 +160,25 @@ func (mux *ServeMux) listen() error {
 			return fmt.Errorf("queue: %s", err.Error())
 		}
 
-		log.Printf("Listening for %s...\n", k)
-		mux.declareListener(channel, *queue, v.h)
+		deliveries, err := channel.Consume(
+			queue.Name,
+			mux.tag,
+			true,
+			false,
+			false,
+			false,
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+
+		go mux.ListenQueue(deliveries, v.h, v.routingKey)
 	}
 
-	// @Ali: We can recover panics here.
-
-	log.Printf("Waiting for events...\n")
-
-	connErr := <-notify
-	if err := conn.Close(); err != nil {
-		log.Println(err)
-	}
-
-	return connErr
+	return <-notify
 }
+
 // ListenAndServe listens messages from rabbitmq.
 // Matches special handler for message.
 // Tries to establish connection 10 times, one try per 10 second, then returns error.
@@ -180,17 +187,17 @@ func (mux *ServeMux) ListenAndServe() error {
 
 	for mux.retries <= MaxRetry {
 		if mux.retries != 0 {
-			log.Printf("[ERROR] Try #%d...\n",  mux.retries)
+			mux.Logger.Error().Msgf("trying #%d", mux.retries)
 		}
 
 		err = mux.listen()
+		mux.Logger.Error().
+			Err(err).
+			Msg("failed to listen")
 
-		log.Printf("[ERROR] %s \n", err)
 		mux.retries += 1
-
-		log.Printf("[RECOVER] Sleeping for %d seconds\n", WaiTime)
+		mux.Logger.Error().Msgf("waiting for %d seconds", WaiTime)
 		time.Sleep(WaiTime * time.Second)
-		log.Println("[RECOVER] Awake!")
 	}
 
 	return err
@@ -201,13 +208,16 @@ func (mux *ServeMux) Handle(routingKey string, handler Handler) {
 	defer mux.mu.Unlock()
 
 	if routingKey == "" {
-		panic("amqp: invalid pattern")
+		mux.Logger.Panic().
+			Msgf("pattern %s is not valid", routingKey)
 	}
 	if handler == nil {
-		panic("amqp: nil handler")
+		mux.Logger.Panic().
+			Msgf("handler with key %s can not be nil ", routingKey)
 	}
 	if _, exist := mux.m[routingKey]; exist {
-		panic("amqp: multiple registrations for " + routingKey)
+		mux.Logger.Panic().
+			Msgf("multiple registrations for %s", routingKey)
 	}
 
 	if mux.m == nil {
@@ -221,13 +231,16 @@ func (mux *ServeMux) HandleFunc(routingKey string, handler func(event eventapi.E
 	defer mux.mu.Unlock()
 
 	if routingKey == "" {
-		panic("amqp: invalid pattern")
+		mux.Logger.Panic().
+			Msgf("pattern %s is not valid", routingKey)
 	}
 	if handler == nil {
-		panic("amqp: nil handler")
+		mux.Logger.Panic().
+			Msgf("handler with key %s can not be nil ", routingKey)
 	}
 	if _, exist := mux.m[routingKey]; exist {
-		panic("amqp: multiple registrations for " + routingKey)
+		mux.Logger.Panic().
+			Msgf("multiple registrations for %s", routingKey)
 	}
 
 	if mux.m == nil {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/smtp"
 	"strings"
 	"text/template"
@@ -54,12 +53,12 @@ func (e *EmailSender) Send() error {
 
 	tpl, err := template.ParseFiles("templates/email.tpl")
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	buff := bytes.Buffer{}
 	if err := tpl.Execute(&buff, e.email); err != nil {
-		log.Println(err)
+		return err
 	}
 
 	text, err := ioutil.ReadAll(e.email.Reader)

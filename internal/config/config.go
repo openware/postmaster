@@ -5,10 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"io"
 	"strings"
-
-	"github.com/go-yaml/yaml"
 )
 
 // Configuration of AMQP.
@@ -85,8 +82,8 @@ func (lang *Language) Valid() bool {
 	return notEmpty && isUp
 }
 
-func validateLanguages(conf Config) (bool, error) {
-	for _, lang := range conf.Languages {
+func (config *Config) validateLanguages() (bool, error) {
+	for _, lang := range config.Languages {
 		if !lang.Valid() {
 			return false, fmt.Errorf("language \"%s\" should be uppercased", lang.Code)
 		}
@@ -96,18 +93,12 @@ func validateLanguages(conf Config) (bool, error) {
 }
 
 // Validate configuration file.
-func Validate(r io.Reader) (bool, error) {
-	conf := Config{}
-
-	if err := yaml.NewDecoder(r).Decode(&conf); err != nil {
+func (config *Config) Validate() (bool, error) {
+	if _, err := config.validateLanguages(); err != nil {
 		return false, err
 	}
 
-	if _, err := validateLanguages(conf); err != nil {
-		return false, err
-	}
-
-	for _, event := range conf.Events {
+	for _, event := range config.Events {
 		for lang, tpl := range event.Templates {
 			strippedTpl := strings.TrimSpace(tpl.Template)
 			strippedTplPath := strings.TrimSpace(tpl.TemplatePath)
@@ -122,7 +113,7 @@ func Validate(r io.Reader) (bool, error) {
 			}
 		}
 
-		for _, lang := range conf.Languages {
+		for _, lang := range config.Languages {
 			if _, exists := event.Templates[lang.Code]; !exists {
 				err := fmt.Errorf(
 					"language \"%s\" in event \"%s\" is not defined", lang.Code, event.Name)
