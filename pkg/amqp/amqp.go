@@ -87,29 +87,18 @@ func (mux *ServeMux) declareExchange(channel *amqp.Channel) error {
 	return err
 }
 
-// TODO: Extract goroutine.
-func (mux *ServeMux) declareListener(
-	ch *amqp.Channel,
-	queue amqp.Queue,
+func (mux *ServeMux) ListenQueue(
+	deliveries <-chan amqp.Delivery,
 	handler Handler,
-) error {
-	deliveries, err := ch.Consume(
-		queue.Name,
-		mux.tag,
-		true,
-		true,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return err
-	}
+	key string,
+) {
+	for {
+		delivery, ok := <-deliveries
+			if !ok {
+				mux.Logger.Error().Msgf("stopped listening %s", key)
+				return
+			}
 
-	// TODO: Prepare channel with errors?
-	// TODO: Handle closing of channel.
-	go func() {
-		for delivery := range deliveries {
 			mux.Logger.Debug().
 				RawJSON("delivery", delivery.Body).
 				Msg("delivery received")
@@ -139,13 +128,9 @@ func (mux *ServeMux) declareListener(
 			}
 
 			handler.ServeAMQP(claims.Event)
-		}
-	}()
-
-	return nil
+	}
 }
 
-// TODO: Refactor and test conn retry feature.
 func (mux *ServeMux) listen() error {
 	conn, err := amqp.Dial(mux.addr)
 	if err != nil {
@@ -175,9 +160,20 @@ func (mux *ServeMux) listen() error {
 			return fmt.Errorf("queue: %s", err.Error())
 		}
 
-		if err := mux.declareListener(channel, *queue, v.h); err != nil {
-			return fmt.Errorf("declare: %s", err.Error())
+		deliveries, err := channel.Consume(
+			queue.Name,
+			mux.tag,
+			true,
+			false,
+			false,
+			false,
+			nil,
+		)
+		if err != nil {
+			return err
 		}
+
+		go mux.ListenQueue(deliveries, v.h, v.routingKey)
 	}
 
 	return <-notify
