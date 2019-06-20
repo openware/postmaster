@@ -49,7 +49,7 @@ func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*am
 		queueName,
 		true,
 		true,
-		true,
+		false,
 		false,
 		nil,
 	)
