@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// Configuration of AMQP.
-type AMQP struct {
-	Exchange string `yaml:"exchange"`
-	Tag      string `yaml:"tag"`
-}
-
 type Language struct {
 	Code string `yaml:"code"`
 	Name string `yaml:"name"`
@@ -31,11 +25,16 @@ type Event struct {
 	Templates map[string]Template `yaml:"templates"`
 }
 
+type Exchange struct {
+	ID   string `yaml:"id"`
+	Name string `yaml:"name"`
+}
+
 // General application configuration.
 type Config struct {
-	AMQP      AMQP       `yaml:"amqp"`
-	Languages []Language `yaml:"languages"`
-	Events    []Event    `yaml:"events"`
+	Languages []Language       `yaml:"languages"`
+	Exchanges []Exchange       `yaml:"exchanges"`
+	Events    map[string]Event `yaml:"events"`
 }
 
 func (e *Event) Template(key string) Template {

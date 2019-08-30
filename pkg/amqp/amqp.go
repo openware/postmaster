@@ -2,6 +2,7 @@ package amqp
 
 import (
 	"fmt"
+	"github.com/openware/postmaster/internal/config"
 	"io/ioutil"
 	"sync"
 	"time"
@@ -14,7 +15,7 @@ import (
 
 const (
 	MaxRetry = 10
-	WaiTime  = 30
+	WaitTime = 30
 )
 
 type muxEntry struct {
@@ -25,20 +26,20 @@ type muxEntry struct {
 type ServeMux struct {
 	Logger zerolog.Logger
 
-	exchange string
-	tag      string
-	addr     string
-	mu       sync.RWMutex
-	m        map[string]muxEntry
+	exchanges []config.Exchange
+	tag       string
+	addr      string
+	mu        sync.RWMutex
+	m         map[string]map[string]muxEntry
 
 	retries uint8
 }
 
-func NewServeMux(addr, tag, exchange string) *ServeMux {
+func NewServeMux(addr, tag string, exchanges ...config.Exchange) *ServeMux {
 	return &ServeMux{
-		addr:     addr,
-		tag:      tag,
-		exchange: exchange,
+		addr:      addr,
+		tag:       tag,
+		exchanges: exchanges,
 	}
 }
 
@@ -61,7 +62,7 @@ func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*am
 	err = channel.QueueBind(
 		queue.Name,
 		routingKey,
-		mux.exchange,
+		mux.exchanges,
 		false,
 		nil,
 	)
@@ -73,18 +74,23 @@ func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*am
 	return &queue, nil
 }
 
-func (mux *ServeMux) declareExchange(channel *amqp.Channel) error {
-	err := channel.ExchangeDeclare(
-		mux.exchange,
-		"direct",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+func (mux *ServeMux) declareExchanges(channel *amqp.Channel) error {
+	for _, exchange := range mux.exchanges {
+		err := channel.ExchangeDeclare(
+			exchange,
+			"direct",
+			false,
+			false,
+			false,
+			false,
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 func (mux *ServeMux) ListenQueue(
@@ -151,7 +157,7 @@ func (mux *ServeMux) listen() error {
 			return fmt.Errorf("channel %s", err.Error())
 		}
 
-		if err != mux.declareExchange(channel) {
+		if err != mux.declareExchanges(channel) {
 			return fmt.Errorf("exchange %s", err.Error())
 		}
 
@@ -196,8 +202,8 @@ func (mux *ServeMux) ListenAndServe() error {
 			Msg("failed to listen")
 
 		mux.retries += 1
-		mux.Logger.Error().Msgf("waiting for %d seconds", WaiTime)
-		time.Sleep(WaiTime * time.Second)
+		mux.Logger.Error().Msgf("waiting for %d seconds", WaitTime)
+		time.Sleep(WaitTime * time.Second)
 	}
 
 	return err

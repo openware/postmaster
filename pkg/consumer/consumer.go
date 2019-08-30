@@ -63,7 +63,7 @@ func configureLogger() {
 	env.Logger = Logger
 }
 
-func Run(path string) {
+func Run(path, tag string) {
 	configureLogger()
 	requireEnvs()
 
@@ -84,7 +84,7 @@ func Run(path string) {
 			Msgf("configuration file %s is not valid", path)
 	}
 
-	serveMux := amqp.NewServeMux(amqpURI(), conf.AMQP.Tag, conf.AMQP.Exchange)
+	serveMux := amqp.NewServeMux(amqpURI(), tag, conf.)
 	serveMux.Logger = Logger
 
 	for id := range conf.Events {
