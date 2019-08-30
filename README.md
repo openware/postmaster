@@ -2,13 +2,16 @@
 
 [![Build Status](https://ci.microkube.com/api/badges/openware/postmaster/status.svg)](https://ci.microkube.com/openware/postmaster)
 
-> :incoming_envelope: Mail events consumer.
+> :incoming_envelope: Notification Hub for openware stack.
 
-[Barong](https://www.github.com/rubykube/barong) Event API Client.
+Event API client for
+
+* [Barong](https://www.github.com/rubykube/barong)
+* [Peatio](https://www.github.com/rubykube/patio)
 
 ## Overview
 
-Consume mail events from barong and send emails over SMTP.
+Consume mail events from RabbitMQ and send emails over SMTP.
 
 ![Overview](./resources/overview.png)
 

@@ -4,7 +4,7 @@ ENV GO111MODULE=on
 
 WORKDIR /go/src/app
 
-LABEL maintainer="github@shanaakh.pro"
+LABEL maintainer="github@shal.dev"
 
 RUN apk add bash ca-certificates git gcc g++ libc-dev
 
