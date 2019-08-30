@@ -94,40 +94,40 @@ func (mux *ServeMux) ListenQueue(
 ) {
 	for {
 		delivery, ok := <-deliveries
-			if !ok {
-				mux.Logger.Error().Msgf("stopped listening %s", key)
-				return
-			}
+		if !ok {
+			mux.Logger.Error().Msgf("stopped listening %s", key)
+			return
+		}
 
-			mux.Logger.Debug().
-				RawJSON("delivery", delivery.Body).
-				Msg("delivery received")
+		mux.Logger.Debug().
+			RawJSON("delivery", delivery.Body).
+			Msg("delivery received")
 
-			jwtReader, err := eventapi.DeliveryAsJWT(delivery)
-			if err != nil {
-				mux.Logger.Error().Err(err).Msg("")
-				return
-			}
+		jwtReader, err := eventapi.DeliveryAsJWT(delivery)
+		if err != nil {
+			mux.Logger.Error().Err(err).Msg("")
+			return
+		}
 
-			jwt, err := ioutil.ReadAll(jwtReader)
-			if err != nil {
-				mux.Logger.Error().Err(err).Msg("")
-				return
-			}
+		jwt, err := ioutil.ReadAll(jwtReader)
+		if err != nil {
+			mux.Logger.Error().Err(err).Msg("")
+			return
+		}
 
+		mux.Logger.Debug().
+			Str("token", string(jwt)).
+			Msg("token 	received")
+
+		claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
+		if err != nil {
 			mux.Logger.Debug().
 				Str("token", string(jwt)).
-				Msg("token 	received")
+				Msg("validation failed")
+			return
+		}
 
-			claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
-			if err != nil {
-				mux.Logger.Debug().
-					Str("token", string(jwt)).
-					Msg("validation failed")
-				return
-			}
-
-			handler.ServeAMQP(claims.Event)
+		handler.ServeAMQP(claims.Event)
 	}
 }
 
