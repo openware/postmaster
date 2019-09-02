@@ -74,15 +74,15 @@
 <body>
     <div class="main-block">
         <div class="logo">
-            <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.svg" />
+           <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.png" />
         </div>
         <div class="content">
-            <p class="title">Здравствуйте, {{ .user.email }}!</p>
+            <p class="title">Здравствуйте, {{ .record.user.email }}!</p>
             <p class="text">
                 Используйте эту уникальную ссылку для подтверждения вашей почты
             </p>
             <div class="confirmation-button">
-                <a href="{{ .domain }}/accounts/confirmation?confirmation_token={{ .token }}&lang=en">Подтвердить</a>
+                <a href="{{ .record.domain }}/accounts/confirmation?confirmation_token={{ .record.token }}&lang=en">Подтвердить</a>
             </div>
         </div>
     </div>

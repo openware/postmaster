@@ -7,7 +7,7 @@
 Event API client for
 
 * [Barong](https://www.github.com/rubykube/barong)
-* [Peatio](https://www.github.com/rubykube/patio)
+* [Peatio](https://www.github.com/rubykube/peatio)
 
 ## Overview
 
@@ -29,7 +29,6 @@ $ go run ./cmd/postmaster/main.go
 |------------------------|--------------------------------------|----------|----------------------|
 | `POSTMASTER_ENV`       | Environment, reacts on "production"  | *no*     |                      |
 | `POSTMASTER_LOG_LEVEL` | Level of logging                     | *no*     | `debug`              |
-| `JWT_PUBLIC_KEY`       | RSA Public Key for decoding          | *yes*    |                      |
 | `RABBITMQ_HOST`        | Host of RabbitMQ daemon              | *no*     | `localhost`          |
 | `RABBITMQ_PORT`        | Port of RabbitMQ daemon              | *no*     | `5672`               |
 | `RABBITMQ_USERNAME`    | RabbitMQ username                    | *no*     | `guest`              |

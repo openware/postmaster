@@ -74,15 +74,15 @@
 <body>
     <div class="main-block">
         <div class="logo">
-            <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.svg" />
+            <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.png" />
         </div>
         <div class="content">
-            <p class="title">Hello {{ .user.email }}!</p>
+            <p class="title">Hello!</p>
             <p class="text">
-                Use this unique link to reset your password
+                Use this unique link to reset your password for email {{ .record.user.email }}
             </p>
             <div class="reset-button">
-                <a href="{{ .domain }}/accounts/password_reset?reset_token={{ .token }}&lang=en">Reset</a>
+                <a href="{{ .record.domain }}/accounts/password_reset?reset_token={{ .record.token }}&lang=en">Reset</a>
             </div>
         </div>
     </div>

@@ -74,15 +74,15 @@
 <body>
     <div class="main-block">
         <div class="logo">
-            <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.svg" />
+            <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.png" />
         </div>
         <div class="content">
-            <p class="title">Здравствуйте, {{ .user.email }}!</p>
+            <p class="title">Здравствуйте, {{ .record.user.email }}!</p>
             <p class="text">
                 Используйте эту уникальную ссылку для сброса вашего пароля
             </p>
             <div class="reset-button">
-                <a href="{{ .domain }}/accounts/password_reset?reset_token={{ .token }}&lang=en">Сбросить</a>
+                <a href="{{ .record.domain }}/accounts/password_reset?reset_token={{ .record.token }}&lang=en">Сбросить</a>
             </div>
         </div>
     </div>

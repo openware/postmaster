@@ -7,7 +7,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/antonmedv/expr"
 	"github.com/go-yaml/yaml"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -31,7 +33,6 @@ func amqpURI() string {
 }
 
 func requireEnvs() {
-	env.Must(env.Fetch("JWT_PUBLIC_KEY"))
 	env.Must(env.Fetch("SMTP_PASSWORD"))
 	env.Must(env.Fetch("SENDER_EMAIL"))
 }
@@ -63,7 +64,7 @@ func configureLogger() {
 	env.Logger = Logger
 }
 
-func Run(path string) {
+func Run(path, tag string) {
 	configureLogger()
 	requireEnvs()
 
@@ -79,17 +80,17 @@ func Run(path string) {
 			Msgf("can not unmarshal configuration %s", path)
 	}
 
-	if _, err := conf.Validate(); err != nil {
+	if err := conf.Validate(); err != nil {
 		Logger.Fatal().Err(err).
 			Msgf("configuration file %s is not valid", path)
 	}
 
-	serveMux := amqp.NewServeMux(amqpURI(), conf.AMQP.Tag, conf.AMQP.Exchange)
+	serveMux := amqp.NewServeMux(amqpURI(), tag, conf.Exchanges, conf.Keychain)
 	serveMux.Logger = Logger
 
 	for id := range conf.Events {
 		eventConf := conf.Events[id]
-		serveMux.HandleFunc(eventConf.Key, func(event eventapi.Event) {
+		serveMux.HandleFunc(eventConf.Key, eventConf.Exchange, func(event eventapi.RawEvent) {
 			Logger.Info().Msgf("processing event %s", eventConf.Key)
 
 			usr, err := eventapi.Unmarshal(event)
@@ -101,21 +102,73 @@ func Run(path string) {
 				return
 			}
 
+			record := new(eventapi.Record)
+			dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+				TagName:          "json",
+				Result:           &record,
+				WeaklyTypedInput: true,
+			})
+
+			if err != nil {
+				Logger.Error().
+					Err(err).
+					RawJSON("event", event["payload"].([]byte)).
+					Msg("can not unmarshal event")
+				return
+			}
+
+			if err := dec.Decode(usr.Record); err != nil {
+				Logger.Error().
+					Err(err).
+					RawJSON("event", event["payload"].([]byte)).
+					Msg("can not unmarshal event")
+				return
+			}
+
+			// First language in config is default.
+			if record.Language == "" {
+				record.Language = conf.Languages[0].Code
+			}
+
 			Logger.Info().
-				Str("uid", usr.User.UID).
-				Str("email", usr.User.Email).
-				Str("role", usr.User.Role).
+				Str("uid", record.User.UID).
+				Str("email", record.User.Email).
 				Msgf("event received")
 
 			// Checks, that language is supported.
-			if !conf.ContainsLanguage(usr.Language) {
+			if !conf.ContainsLanguage(record.Language) {
 				Logger.Error().
-					Str("language", usr.Language).
+					Str("language", record.Language).
 					Msg("language is not supported")
 				return
 			}
 
-			tpl := eventConf.Template(usr.Language)
+			if strings.TrimSpace(eventConf.Expression) != "" {
+				result, err := expr.Eval(eventConf.Expression, event)
+				if err != nil {
+					Logger.Error().Err(err).Msg("expression evaluation failed")
+				}
+
+				match, ok := result.(bool)
+				if !ok {
+					Logger.Error().Err(err).Msg("expression result is not boolean")
+					return
+				}
+
+				logger := Logger.Info().
+					Str("uid", record.User.UID).
+					Str("email", record.User.Email).
+					Interface("match", result)
+
+				if !match {
+					logger.Msgf("skipped")
+					return
+				}
+
+				logger.Msgf("matched")
+			}
+
+			tpl := eventConf.Template(record.Language)
 			content, err := tpl.Content(event)
 			if err != nil {
 				Logger.Error().Err(err).Msg("template execution failed")
@@ -125,7 +178,7 @@ func Run(path string) {
 			email := Email{
 				FromAddress: env.Must(env.Fetch("SENDER_EMAIL")),
 				FromName:    env.FetchDefault("SENDER_NAME", "postmaster"),
-				ToAddress:   usr.User.Email,
+				ToAddress:   record.User.Email,
 				Subject:     tpl.Subject,
 				Reader:      bytes.NewReader(content),
 			}
