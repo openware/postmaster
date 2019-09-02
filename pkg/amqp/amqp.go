@@ -25,24 +25,27 @@ type muxEntry struct {
 type ServeMux struct {
 	Logger zerolog.Logger
 
-	exchange string
-	tag      string
-	addr     string
-	mu       sync.RWMutex
-	m        map[string]muxEntry
+	exchanges map[string]string
+	keychain  map[string]eventapi.Validator
+
+	tag  string
+	addr string
+	mu   sync.RWMutex
+	m    map[string]map[string]muxEntry
 
 	retries uint8
 }
 
-func NewServeMux(addr, tag, exchange string) *ServeMux {
+func NewServeMux(addr, tag string, exchanges map[string]string, keychain map[string]eventapi.Validator) *ServeMux {
 	return &ServeMux{
-		addr:     addr,
-		tag:      tag,
-		exchange: exchange,
+		addr:      addr,
+		tag:       tag,
+		exchanges: exchanges,
+		keychain:  keychain,
 	}
 }
 
-func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*amqp.Queue, error) {
+func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string, exchange string) (*amqp.Queue, error) {
 	queueName := fmt.Sprintf("postmaster.%s.consumer", routingKey)
 
 	queue, err := channel.QueueDeclare(
@@ -61,7 +64,7 @@ func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*am
 	err = channel.QueueBind(
 		queue.Name,
 		routingKey,
-		mux.exchange,
+		exchange,
 		false,
 		nil,
 	)
@@ -73,24 +76,19 @@ func (mux *ServeMux) declareQueue(channel *amqp.Channel, routingKey string) (*am
 	return &queue, nil
 }
 
-func (mux *ServeMux) declareExchange(channel *amqp.Channel) error {
-	err := channel.ExchangeDeclare(
-		mux.exchange,
-		"direct",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+func (mux *ServeMux) declareExchange(name string, channel *amqp.Channel) error {
+	err := channel.ExchangeDeclare(name, "direct", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func (mux *ServeMux) ListenQueue(
 	deliveries <-chan amqp.Delivery,
 	handler Handler,
-	key string,
+	key, exchangeID string,
 ) {
 	for {
 		delivery, ok := <-deliveries
@@ -117,9 +115,10 @@ func (mux *ServeMux) ListenQueue(
 
 		mux.Logger.Debug().
 			Str("token", string(jwt)).
-			Msg("token 	received")
+			Msg("token received")
 
-		claims, err := eventapi.ParseJWT(string(jwt), eventapi.ValidateJWT)
+		validator := mux.keychain[exchangeID]
+		claims, err := eventapi.ParseJWT(string(jwt), validator.ValidateJWT)
 		if err != nil {
 			mux.Logger.Debug().
 				Str("token", string(jwt)).
@@ -143,43 +142,44 @@ func (mux *ServeMux) listen() error {
 
 	notify := conn.NotifyClose(make(chan *amqp.Error))
 
-	// Each event will have own: channel, queue, consumer.
-	for k, v := range mux.m {
-		channel, err := conn.Channel()
+	channel, err := conn.Channel()
+	if err != nil {
+		return fmt.Errorf("channel: %s", err.Error())
+	}
 
-		if err != nil {
-			return fmt.Errorf("channel %s", err.Error())
+	// Declare exchanges using one channel.
+	for id := range mux.m {
+		if err != mux.declareExchange(mux.exchanges[id], channel) {
+			return fmt.Errorf("exchange: %s", err.Error())
 		}
+	}
 
-		if err != mux.declareExchange(channel) {
-			return fmt.Errorf("exchange %s", err.Error())
+	// Bind queue to exchange and listen.
+	for id, events := range mux.m {
+		for key, event := range events {
+			channel, err := conn.Channel()
+			if err != nil {
+				return fmt.Errorf("channel: %s", err.Error())
+			}
+
+			queue, err := mux.declareQueue(channel, key, mux.exchanges[id])
+			if err != nil {
+				return fmt.Errorf("queue: %s", err.Error())
+			}
+
+			deliveries, err := channel.Consume(queue.Name, mux.tag, true, false, false, false, nil)
+			if err != nil {
+				return err
+			}
+
+			go mux.ListenQueue(deliveries, event.h, event.routingKey, id)
 		}
-
-		queue, err := mux.declareQueue(channel, k)
-		if err != nil {
-			return fmt.Errorf("queue: %s", err.Error())
-		}
-
-		deliveries, err := channel.Consume(
-			queue.Name,
-			mux.tag,
-			true,
-			false,
-			false,
-			false,
-			nil,
-		)
-		if err != nil {
-			return err
-		}
-
-		go mux.ListenQueue(deliveries, v.h, v.routingKey)
 	}
 
 	return <-notify
 }
 
-// ListenAndServe listens messages from rabbitmq.
+// ListenAndServe listens messages from RabbitMQ.
 // Matches special handler for message.
 // Tries to establish connection 10 times, one try per 10 second, then returns error.
 func (mux *ServeMux) ListenAndServe() error {
@@ -203,7 +203,7 @@ func (mux *ServeMux) ListenAndServe() error {
 	return err
 }
 
-func (mux *ServeMux) Handle(routingKey string, handler Handler) {
+func (mux *ServeMux) Handle(routingKey, exchangeID string, handler Handler) {
 	mux.mu.Lock()
 	defer mux.mu.Unlock()
 
@@ -221,12 +221,17 @@ func (mux *ServeMux) Handle(routingKey string, handler Handler) {
 	}
 
 	if mux.m == nil {
-		mux.m = make(map[string]muxEntry)
+		mux.m = make(map[string]map[string]muxEntry)
 	}
-	mux.m[routingKey] = muxEntry{h: handler, routingKey: routingKey}
+
+	if mux.m[exchangeID] == nil {
+		mux.m[exchangeID] = make(map[string]muxEntry)
+	}
+
+	mux.m[exchangeID][routingKey] = muxEntry{h: handler, routingKey: routingKey}
 }
 
-func (mux *ServeMux) HandleFunc(routingKey string, handler func(event eventapi.Event)) {
+func (mux *ServeMux) HandleFunc(routingKey, exchangeID string, handler func(raw eventapi.RawEvent)) {
 	mux.mu.Lock()
 	defer mux.mu.Unlock()
 
@@ -244,19 +249,23 @@ func (mux *ServeMux) HandleFunc(routingKey string, handler func(event eventapi.E
 	}
 
 	if mux.m == nil {
-		mux.m = make(map[string]muxEntry)
+		mux.m = make(map[string]map[string]muxEntry)
 	}
 
-	mux.m[routingKey] = muxEntry{h: HandlerFunc(handler), routingKey: routingKey}
+	if mux.m[exchangeID] == nil {
+		mux.m[exchangeID] = make(map[string]muxEntry)
+	}
+
+	mux.m[exchangeID][routingKey] = muxEntry{h: HandlerFunc(handler), routingKey: routingKey}
 }
 
 type Handler interface {
-	ServeAMQP(event eventapi.Event)
+	ServeAMQP(raw eventapi.RawEvent)
 }
 
-type HandlerFunc func(eventapi.Event)
+type HandlerFunc func(raw eventapi.RawEvent)
 
 // ServeHTTP calls f(event).
-func (f HandlerFunc) ServeAMQP(event eventapi.Event) {
-	f(event)
+func (f HandlerFunc) ServeAMQP(raw eventapi.RawEvent) {
+	f(raw)
 }

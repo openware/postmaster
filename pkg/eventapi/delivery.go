@@ -20,7 +20,6 @@ type DeliverySignature struct {
 	Header    DeliverySignatureHeader `json:"header,omitempty"`
 }
 
-// Structure of Event API Message.
 type Delivery struct {
 	Payload    string              `json:"payload"`
 	Signatures []DeliverySignature `json:"signatures"`

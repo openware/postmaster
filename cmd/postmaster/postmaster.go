@@ -7,15 +7,17 @@ import (
 )
 
 const (
-	path = "config/postmaster.yml"
+	DefaultPath = "config/postmaster.yml"
+	DefaultTag  = "postmaster"
 )
 
 var (
-	config = flag.String("config", path, "Path to postmaster config file")
+	config = flag.String("config", DefaultPath, "Path to postmaster config file")
+	tag    = flag.String("tag", DefaultTag, "Tag for RabbitMQ consumer")
 )
 
 func main() {
 	flag.Parse()
 
-	consumer.Run(*config)
+	consumer.Run(*config, *tag)
 }

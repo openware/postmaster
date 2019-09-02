@@ -49,7 +49,9 @@ func DefaultConfig() Config {
 	config := Config{}
 
 	file, _ := os.Open(configPath)
-	yaml.NewDecoder(file).Decode(&config)
+	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
+		panic(err)
+	}
 
 	return config
 }
@@ -188,26 +190,22 @@ func TestValidate(t *testing.T) {
 		tmp := ExampleConfig()
 		tmp.Languages[0].Code = strings.ToLower(tmp.Languages[0].Code)
 
-		res, err := tmp.Validate()
+		err := tmp.Validate()
 		assert.Error(t, err)
-		assert.False(t, res)
 	})
 
 	t.Run("event without templates", func(t *testing.T) {
 		tmp := ExampleConfig()
 		tmp.Events[0].Templates = make(map[string]Template, 0)
 
-		res, err := tmp.Validate()
-
+		err := tmp.Validate()
 		assert.Error(t, err)
-		assert.False(t, res)
 	})
 
 	t.Run("default should be valid", func(t *testing.T) {
-		tmp := ExampleConfig()
-		valid, err := tmp.Validate()
+		tmp := DefaultConfig()
+		err := tmp.Validate()
 
 		assert.NoError(t, err)
-		assert.True(t, valid)
 	})
 }

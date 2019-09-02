@@ -13,17 +13,21 @@ type User struct {
 	State string `json:"state"`
 }
 
-type UserEvent struct {
+type Record struct {
 	User     User   `json:"user"`
 	Language string `json:"language"`
-	Domain   string `json:"domain"`
 }
 
-func Unmarshal(event Event) (*UserEvent, error) {
-	usrEvent := new(UserEvent)
+type Event struct {
+	Record  map[string]interface{} `json:"record"`
+	Changes map[string]interface{} `json:"changes"`
+}
+
+func Unmarshal(raw RawEvent) (*Event, error) {
+	event := new(Event)
 	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:          "json",
-		Result:           &usrEvent,
+		Result:           &event,
 		WeaklyTypedInput: true,
 	})
 
@@ -31,9 +35,9 @@ func Unmarshal(event Event) (*UserEvent, error) {
 		return nil, err
 	}
 
-	if err := dec.Decode(event); err != nil {
+	if err := dec.Decode(raw); err != nil {
 		return nil, err
 	}
 
-	return usrEvent, nil
+	return event, nil
 }

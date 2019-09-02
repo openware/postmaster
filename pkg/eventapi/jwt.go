@@ -5,23 +5,26 @@ import (
 	"errors"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/openware/postmaster/pkg/env"
 )
 
-type Event map[string]interface{}
+type RawEvent map[string]interface{}
 
 type Claims struct {
 	jwt.StandardClaims
-	Event Event `json:"event"`
+	Event RawEvent `json:"event"`
 }
 
-func ValidateJWT(token *jwt.Token) (interface{}, error) {
-	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+type Validator struct {
+	Algorithm string `yaml:"algorithm"`
+	Value     string `yaml:"value"`
+}
+
+func (v *Validator) ValidateJWT(token *jwt.Token) (interface{}, error) {
+	if token.Method.Alg() != v.Algorithm {
 		return nil, errors.New("unexpected signing method")
 	}
 
-	encPublicKey := env.Must(env.Fetch("JWT_PUBLIC_KEY"))
-	publicKey, err := base64.StdEncoding.DecodeString(encPublicKey)
+	publicKey, err := base64.StdEncoding.DecodeString(v.Value)
 
 	if err != nil {
 		return nil, err
