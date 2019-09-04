@@ -91,12 +91,13 @@ func Run(path, tag string) {
 	for id := range conf.Events {
 		eventConf := conf.Events[id]
 		serveMux.HandleFunc(eventConf.Key, eventConf.Exchange, func(event eventapi.RawEvent) {
-			Logger.Info().Msgf("processing event %s", eventConf.Key)
+			// Logger.Info().Msgf("processing event %s", eventConf.Key)
 
 			usr, err := eventapi.Unmarshal(event)
 			if err != nil {
 				Logger.Error().
 					Err(err).
+					Str("event", eventConf.Key).
 					RawJSON("event", event["payload"].([]byte)).
 					Msg("can not unmarshal event")
 				return
@@ -112,6 +113,7 @@ func Run(path, tag string) {
 			if err != nil {
 				Logger.Error().
 					Err(err).
+					Str("event", eventConf.Key).
 					RawJSON("event", event["payload"].([]byte)).
 					Msg("can not unmarshal event")
 				return
@@ -120,6 +122,7 @@ func Run(path, tag string) {
 			if err := dec.Decode(usr.Record); err != nil {
 				Logger.Error().
 					Err(err).
+					Str("event", eventConf.Key).
 					RawJSON("event", event["payload"].([]byte)).
 					Msg("can not unmarshal event")
 				return
@@ -133,12 +136,14 @@ func Run(path, tag string) {
 			Logger.Info().
 				Str("uid", record.User.UID).
 				Str("email", record.User.Email).
+				Str("event", eventConf.Key).
 				Msgf("event received")
 
 			// Checks, that language is supported.
 			if !conf.ContainsLanguage(record.Language) {
 				Logger.Error().
 					Str("language", record.Language).
+					Str("event", eventConf.Key).
 					Msg("language is not supported")
 				return
 			}
@@ -158,6 +163,7 @@ func Run(path, tag string) {
 				logger := Logger.Info().
 					Str("uid", record.User.UID).
 					Str("email", record.User.Email).
+					Str("event", eventConf.Key).
 					Interface("match", result)
 
 				if !match {

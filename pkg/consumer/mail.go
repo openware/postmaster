@@ -11,6 +11,19 @@ import (
 	"text/template"
 )
 
+var headers *template.Template
+
+func init() {
+	headers, _ = template.New("headers").Parse(`
+		From: "{{ .FromName }}" <{{ .FromAddress }}>
+		To: {{ .ToAddress }}
+		Subject: {{ .Subject }}
+		Content-type: text/html; charset=iso-8859-1
+	`)
+
+	fmt.Println(headers)
+}
+
 type Email struct {
 	FromAddress string
 	FromName    string
@@ -51,13 +64,8 @@ func (e *EmailSender) Send() error {
 		return errors.New("email is nil")
 	}
 
-	tpl, err := template.ParseFiles("templates/email.tpl")
-	if err != nil {
-		return err
-	}
-
 	buff := bytes.Buffer{}
-	if err := tpl.Execute(&buff, e.email); err != nil {
+	if err := headers.Execute(&buff, e.email); err != nil {
 		return err
 	}
 
