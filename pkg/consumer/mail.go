@@ -15,13 +15,11 @@ var headers *template.Template
 
 func init() {
 	headers, _ = template.New("headers").Parse(`
-		From: "{{ .FromName }}" <{{ .FromAddress }}>
-		To: {{ .ToAddress }}
-		Subject: {{ .Subject }}
-		Content-type: text/html; charset=iso-8859-1
-	`)
-
-	fmt.Println(headers)
+From: "{{ .FromName }}" <{{ .FromAddress }}>
+To: {{ .ToAddress }}
+Subject: {{ .Subject }}
+Content-type: text/html; charset=iso-8859-1
+`)
 }
 
 type Email struct {
