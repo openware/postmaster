@@ -9,7 +9,7 @@
             width: 560px;
             margin: 50px auto;
         }
-        
+
         .logo {
             border-bottom: 1px solid #F3F3F3;
             height: 71px;
@@ -17,17 +17,17 @@
             padding-top: 11px;
             text-align: center;
         }
-        
+
         .logo-img {
             height: 50px;
             width: 145px;
         }
-        
+
         .content {
             padding: 21px 30px 36px 30px;
             text-align: center;
         }
-        
+
         .title {
             color: black;
             font-family: Lato;
@@ -36,7 +36,7 @@
             font-size: 14px;
             line-height: 17px;
         }
-        
+
         .text {
             color: black;
             font-family: Lato;
@@ -46,14 +46,14 @@
             line-height: 17px;
             margin-bottom: 37px;
         }
-        
+
         .reset-button {
             background: #3C78E0;
             margin-left: 172px;
             height: 40px;
             width: 163px;
         }
-        
+
         a {
             color: #FFFFFF;
             font-family: Roboto;
