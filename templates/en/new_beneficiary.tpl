@@ -70,9 +70,9 @@
             <img class="logo-img" src="https://storage.googleapis.com/openware-assets/logo.png" />
         </div>
         <div class="content">
-            <p class="text">New beneficiary <b>{{ .record.name }}</b> created!</p>
+            <p class="text">New {{ .record.currency }} beneficiary <b>{{ .record.name }}</b> created!</p>
             <p class="text">
-                Your <b>pin-code></b> for this beneficiary is {{ .record.pin }}.
+                Your <b>pin-code</b> for this beneficiary is {{ .record.pin }}.
             </p>
         </div>
     </div>

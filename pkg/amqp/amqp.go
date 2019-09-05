@@ -123,7 +123,7 @@ func (mux *ServeMux) ListenQueue(
 			mux.Logger.Debug().
 				Str("token", string(jwt)).
 				Msg("validation failed")
-			return
+			continue
 		}
 
 		handler.ServeAMQP(claims.Event)
