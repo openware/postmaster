@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog"
 	"github.com/streadway/amqp"
 
+	"github.com/openware/postmaster/internal/log"
 	"github.com/openware/postmaster/pkg/eventapi"
 )
 
@@ -23,8 +23,6 @@ type muxEntry struct {
 }
 
 type ServeMux struct {
-	Logger zerolog.Logger
-
 	exchanges map[string]string
 	keychain  map[string]eventapi.Validator
 
@@ -93,36 +91,36 @@ func (mux *ServeMux) ListenQueue(
 	for {
 		delivery, ok := <-deliveries
 		if !ok {
-			mux.Logger.Error().Msgf("stopped listening %s", key)
+			log.Error().Msgf("stopped listening %s", key)
 			return
 		}
 
-		mux.Logger.Debug().
+		log.Debug().
 			RawJSON("delivery", delivery.Body).
 			Msg("delivery received")
 
 		jwtReader, err := eventapi.DeliveryAsJWT(delivery)
 		if err != nil {
-			mux.Logger.Error().Err(err).Msg("")
+			log.Error().Err(err).Msg("")
 			return
 		}
 
 		jwt, err := ioutil.ReadAll(jwtReader)
 		if err != nil {
-			mux.Logger.Error().Err(err).Msg("")
+			log.Error().Err(err).Msg("")
 			return
 		}
 
 		validator := mux.keychain[exchangeID]
 		claims, err := eventapi.ParseJWT(string(jwt), validator.ValidateJWT)
 		if err != nil {
-			mux.Logger.Debug().
+			log.Debug().
 				Str("token", string(jwt)).
 				Msg("validation failed")
 			continue
 		}
 
-		mux.Logger.Debug().
+		log.Debug().
 			Str("token", string(jwt)).
 			Msg("validation succeed")
 
@@ -137,7 +135,7 @@ func (mux *ServeMux) listen() error {
 	}
 
 	// Everything is OK with connection.
-	mux.Logger.Info().Msgf("successfully connected to %s", mux.addr)
+	log.Info().Msgf("successfully connected to %s", mux.addr)
 	mux.retries = 1
 
 	notify := conn.NotifyClose(make(chan *amqp.Error))
@@ -187,16 +185,16 @@ func (mux *ServeMux) ListenAndServe() error {
 
 	for mux.retries <= MaxRetry {
 		if mux.retries != 0 {
-			mux.Logger.Error().Msgf("trying #%d", mux.retries)
+			log.Error().Msgf("trying #%d", mux.retries)
 		}
 
 		err = mux.listen()
-		mux.Logger.Error().
+		log.Error().
 			Err(err).
 			Msg("failed to listen")
 
 		mux.retries++
-		mux.Logger.Error().Msgf("waiting for %d seconds", WaiTime)
+		log.Error().Msgf("waiting for %d seconds", WaiTime)
 		time.Sleep(WaiTime * time.Second)
 	}
 
@@ -208,15 +206,15 @@ func (mux *ServeMux) Handle(routingKey, exchangeID string, handler Handler) {
 	defer mux.mu.Unlock()
 
 	if routingKey == "" {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("pattern %s is not valid", routingKey)
 	}
 	if handler == nil {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("handler with key %s can not be nil ", routingKey)
 	}
 	if _, exist := mux.m[routingKey]; exist {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("multiple registrations for %s", routingKey)
 	}
 
@@ -236,15 +234,15 @@ func (mux *ServeMux) HandleFunc(routingKey, exchangeID string, handler func(raw 
 	defer mux.mu.Unlock()
 
 	if routingKey == "" {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("pattern %s is not valid", routingKey)
 	}
 	if handler == nil {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("handler with key %s can not be nil ", routingKey)
 	}
 	if _, exist := mux.m[routingKey]; exist {
-		mux.Logger.Panic().
+		log.Panic().
 			Msgf("multiple registrations for %s", routingKey)
 	}
 

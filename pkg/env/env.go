@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rs/zerolog/log"
-)
-
-var (
-	Logger = log.Logger
+	"github.com/openware/postmaster/internal/log"
 )
 
 func Must(value string, err error) string {
 	if err != nil {
-		Logger.Fatal().Msg(err.Error())
+		log.Fatal().Msg(err.Error())
 	}
 
 	return value
