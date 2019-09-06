@@ -9,7 +9,6 @@ import (
 
 	"github.com/antonmedv/expr"
 	"github.com/go-yaml/yaml"
-	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -64,6 +63,7 @@ func configureLogger() {
 	env.Logger = Logger
 }
 
+// Run starts the application.
 func Run(path, tag string) {
 	configureLogger()
 	requireEnvs()
@@ -90,50 +90,25 @@ func Run(path, tag string) {
 
 	for id := range conf.Events {
 		eventConf := conf.Events[id]
-		serveMux.HandleFunc(eventConf.Key, eventConf.Exchange, func(event eventapi.RawEvent) {
+		serveMux.HandleFunc(eventConf.Key, eventConf.Exchange, func(raw eventapi.RawEvent) {
 			Logger.Info().Msgf("processing event %s", eventConf.Key)
 
-			usr, err := eventapi.Unmarshal(event)
+			event, err := eventapi.Unmarshal(raw)
 			if err != nil {
 				Logger.Error().
 					Err(err).
-					RawJSON("event", event["payload"].([]byte)).
+					Fields(raw).
 					Msg("can not unmarshal event")
 				return
 			}
 
-			record := new(eventapi.Record)
-			dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-				TagName:          "json",
-				Result:           &record,
-				WeaklyTypedInput: true,
-			})
-
+			record, err := event.FixAndValidate(conf.Languages[0].Code)
 			if err != nil {
-				Logger.Error().
-					Err(err).
-					RawJSON("event", event["payload"].([]byte)).
-					Msg("can not unmarshal event")
+				Logger.Error().Err(err).Fields(raw).Msg("event is not valid")
 				return
 			}
 
-			if err := dec.Decode(usr.Record); err != nil {
-				Logger.Error().
-					Err(err).
-					RawJSON("event", event["payload"].([]byte)).
-					Msg("can not unmarshal event")
-				return
-			}
-
-			// First language in config is default.
-			if record.Language == "" {
-				record.Language = conf.Languages[0].Code
-			}
-
-			Logger.Info().
-				Str("uid", record.User.UID).
-				Str("email", record.User.Email).
-				Msgf("event received")
+			Logger.Info().Str("uid", record.User.UID).Str("email", record.User.Email).Msgf("event received")
 
 			// Checks, that language is supported.
 			if !conf.ContainsLanguage(record.Language) {
@@ -144,7 +119,7 @@ func Run(path, tag string) {
 			}
 
 			if strings.TrimSpace(eventConf.Expression) != "" {
-				result, err := expr.Eval(eventConf.Expression, event)
+				result, err := expr.Eval(eventConf.Expression, raw)
 				if err != nil {
 					Logger.Error().Err(err).Msg("expression evaluation failed")
 				}
@@ -169,7 +144,7 @@ func Run(path, tag string) {
 			}
 
 			tpl := eventConf.Template(record.Language)
-			content, err := tpl.Content(event)
+			content, err := tpl.Content(raw)
 			if err != nil {
 				Logger.Error().Err(err).Msg("template execution failed")
 				return
@@ -193,6 +168,7 @@ func Run(path, tag string) {
 
 			if err := NewEmailSender(conf, email).Send(); err != nil {
 				Logger.Error().Err(err).Msg("failed to send email")
+				return
 			}
 		})
 	}
