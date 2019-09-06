@@ -113,10 +113,6 @@ func (mux *ServeMux) ListenQueue(
 			return
 		}
 
-		mux.Logger.Debug().
-			Str("token", string(jwt)).
-			Msg("token received")
-
 		validator := mux.keychain[exchangeID]
 		claims, err := eventapi.ParseJWT(string(jwt), validator.ValidateJWT)
 		if err != nil {
@@ -125,6 +121,10 @@ func (mux *ServeMux) ListenQueue(
 				Msg("validation failed")
 			continue
 		}
+
+		mux.Logger.Debug().
+			Str("token", string(jwt)).
+			Msg("validation succeed")
 
 		handler.ServeAMQP(claims.Event)
 	}
@@ -195,7 +195,7 @@ func (mux *ServeMux) ListenAndServe() error {
 			Err(err).
 			Msg("failed to listen")
 
-		mux.retries += 1
+		mux.retries++
 		mux.Logger.Error().Msgf("waiting for %d seconds", WaiTime)
 		time.Sleep(WaiTime * time.Second)
 	}
@@ -265,7 +265,7 @@ type Handler interface {
 
 type HandlerFunc func(raw eventapi.RawEvent)
 
-// ServeHTTP calls f(event).
+// ServeAMQP calls f(event).
 func (f HandlerFunc) ServeAMQP(raw eventapi.RawEvent) {
 	f(raw)
 }
