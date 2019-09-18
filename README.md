@@ -1,6 +1,6 @@
 # postmaster
 
-[![Build Status](https://ci.microkube.com/api/badges/openware/postmaster/status.svg)](https://ci.microkube.com/openware/postmaster)
+[![Build Status](https://ci.openware.work/api/badges/openware/postmaster/status.svg)](https://ci.openware.work/openware/postmaster)
 
 > :incoming_envelope: Notification Hub for openware stack.
 
