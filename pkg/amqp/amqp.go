@@ -8,6 +8,7 @@ import (
 
 	"github.com/streadway/amqp"
 
+	"github.com/openware/postmaster/internal/config"
 	"github.com/openware/postmaster/internal/log"
 	"github.com/openware/postmaster/pkg/eventapi"
 )
@@ -23,7 +24,7 @@ type muxEntry struct {
 }
 
 type ServeMux struct {
-	exchanges map[string]string
+	exchanges map[string]config.Exchange
 	keychain  map[string]eventapi.Validator
 
 	tag  string
@@ -34,7 +35,7 @@ type ServeMux struct {
 	retries uint8
 }
 
-func NewServeMux(addr, tag string, exchanges map[string]string, keychain map[string]eventapi.Validator) *ServeMux {
+func NewServeMux(addr, tag string, exchanges map[string]config.Exchange, keychain map[string]eventapi.Validator) *ServeMux {
 	return &ServeMux{
 		addr:      addr,
 		tag:       tag,
@@ -86,7 +87,7 @@ func (mux *ServeMux) declareExchange(name string, channel *amqp.Channel) error {
 func (mux *ServeMux) ListenQueue(
 	deliveries <-chan amqp.Delivery,
 	handler Handler,
-	key, exchangeID string,
+	key, signer string,
 ) {
 	for {
 		delivery, ok := <-deliveries
@@ -111,7 +112,7 @@ func (mux *ServeMux) ListenQueue(
 			return
 		}
 
-		validator := mux.keychain[exchangeID]
+		validator := mux.keychain[signer]
 		claims, err := eventapi.ParseJWT(string(jwt), validator.ValidateJWT)
 		if err != nil {
 			log.Debug().
@@ -147,12 +148,12 @@ func (mux *ServeMux) listen() error {
 
 	// Declare exchanges using one channel.
 	for id := range mux.m {
-		if err != mux.declareExchange(mux.exchanges[id], channel) {
+		if err != mux.declareExchange(mux.exchanges[id].Name, channel) {
 			return fmt.Errorf("exchange: %s", err.Error())
 		}
 	}
 
-	// Bind queue to exchange and listen.
+	// Bind queue to an exchange and register listener.
 	for id, events := range mux.m {
 		for key, event := range events {
 			channel, err := conn.Channel()
@@ -160,7 +161,7 @@ func (mux *ServeMux) listen() error {
 				return fmt.Errorf("channel: %s", err.Error())
 			}
 
-			queue, err := mux.declareQueue(channel, key, mux.exchanges[id])
+			queue, err := mux.declareQueue(channel, key, mux.exchanges[id].Name)
 			if err != nil {
 				return fmt.Errorf("queue: %s", err.Error())
 			}
@@ -170,7 +171,7 @@ func (mux *ServeMux) listen() error {
 				return err
 			}
 
-			go mux.ListenQueue(deliveries, event.h, event.routingKey, id)
+			go mux.ListenQueue(deliveries, event.h, event.routingKey, mux.exchanges[id].Signer)
 		}
 	}
 

@@ -4,12 +4,17 @@ languages:
 - code: RU
   name: Russian
 
-keychain:
-  barong_system:
-    algorithm: RS256
-    value: "changeme"
+exchanges:
+  barong:
+    name: barong.events.system
+    signer: barong
 
-  barong_model:
+  peatio:
+    name: peatio.events.model
+    signer: peatio
+
+keychain:
+  barong:
     algorithm: RS256
     value: "changeme"
 
@@ -17,15 +22,10 @@ keychain:
     algorithm: RS256
     value: "changeme"
 
-exchanges:
-  barong_system: barong.events.system
-  barong_model: barong.events.model
-  peatio: peatio.events.model
-
 events:
 - name: Email Confirmation
   key: user.email.confirmation.token
-  exchange: barong_system
+  exchange: barong
   templates:
     EN:
       subject: Registration Confirmation
@@ -36,7 +36,7 @@ events:
 
 - name: Password Reset
   key: user.password.reset.token
-  exchange: barong_system
+  exchange: barong
   templates:
     EN:
       subject: Password Reset
@@ -44,23 +44,6 @@ events:
     RU:
       subject: Сброс Пароля
       template_path: templates/ru/password_reset.tpl
-
-- name: Session Create
-  key: session.create
-  exchange: barong_system
-  templates:
-    EN:
-      subject: New Login
-      template_path: templates/en/session_create.tpl
-
-- name: User Level Upgrade
-  key: user.updated
-  exchange: barong_model
-  expression: changes.level != nil && record.level > changes.level
-  templates:
-    EN:
-      subject:
-      template_path: templates/en/user_level_upgrade.tpl
 
 - name: Deposit Accepted
   key: deposit.updated
