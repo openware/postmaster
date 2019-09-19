@@ -109,7 +109,7 @@ func Run(path, tag string) {
 			}
 
 			tpl := eventConf.Template(record.Language)
-			content, err := tpl.Content(raw)
+			body, err := tpl.Content(raw)
 			if err != nil {
 				log.Error().Err(err).Msg("template execution failed")
 				return
@@ -119,8 +119,9 @@ func Run(path, tag string) {
 				FromAddress: env.Must(env.Fetch("SENDER_EMAIL")),
 				FromName:    env.FetchDefault("SENDER_NAME", "postmaster"),
 				ToAddress:   record.User.Email,
+				Style:       "",
+				Body         body,
 				Subject:     tpl.Subject,
-				Reader:      bytes.NewReader(content),
 			}
 
 			password := env.Must(env.Fetch("SMTP_PASSWORD"))

@@ -23,6 +23,7 @@ WORKDIR /app
 
 COPY --from=build /go/bin/postmaster ./postmaster
 COPY config/ config/
+COPY assets/ assets/
 COPY templates/ templates/
 
 ENTRYPOINT ["./postmaster", "-config", "config/postmaster.yml"]

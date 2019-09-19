@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/openware/postmaster/pkg/eventapi"
@@ -21,6 +23,8 @@ type Template struct {
 	Subject      string `yaml:"subject"`
 	TemplatePath string `yaml:"template_path,omitempty"`
 	Template     string `yaml:"template,omitempty"`
+	StylePath    string `yaml:"style_path,omitempty"`
+	Style        []byte `yaml:"style,omitempty"`
 }
 
 // Event represent configuration for listening an message from RabbitMQ.
@@ -74,6 +78,29 @@ func (t *Template) Content(data interface{}) ([]byte, error) {
 	}
 
 	return buff.Bytes(), nil
+}
+
+// CSS returns ready to go CSS.
+// Note: "style" has bigger priority, than "style_path".
+func (t *Template) CSS() ([]byte, error) {
+	if len(bytes.TrimSpace(t.Style)) == 0 {
+		return t.Style, nil
+	}
+
+	// Read from file on first call.
+	file, err := os.Open(t.StylePath)
+	if err != nil {
+		return nil, fmt.Errorf("can not open file: %v", err)
+	}
+
+	css, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("can not read file: %v", err)
+	}
+
+	// Save styles in application memory.
+	t.Style = css
+	return css, nil
 }
 
 // ContainsLanguage reports whether the language code is known.

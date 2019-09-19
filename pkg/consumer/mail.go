@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/smtp"
 	"strings"
 	"text/template"
@@ -16,7 +14,7 @@ type Email struct {
 	FromName    string
 	ToAddress   string
 	Subject     string
-	Reader      io.Reader
+	Style, Body []byte
 }
 
 type SMTPConf struct {
@@ -61,18 +59,10 @@ func (e *EmailSender) Send() error {
 		return err
 	}
 
-	text, err := ioutil.ReadAll(e.email.Reader)
-	if err != nil {
-		return err
-	}
-
-	msg := append(buff.Bytes(), "\r\n"...)
-	msg = append(msg, text...)
-
 	recipients := []string{e.email.ToAddress}
-
 	auth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, e.conf.Host)
-	if err := e.send(e.conf.URL(), auth, e.email.FromAddress, recipients, msg); err != nil {
+
+	if err := e.send(e.conf.URL(), auth, e.email.FromAddress, recipients, buff.Bytes()); err != nil {
 		return err
 	}
 

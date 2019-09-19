@@ -30,9 +30,11 @@ events:
     EN:
       subject: Registration Confirmation
       template_path: templates/en/email_confirmation.tpl
+      style_path: assets/openware.css
     RU:
       subject: Подтверждение Регистрации
       template_path: templates/ru/email_confirmation.tpl
+      style_path: assets/openware.css
 
 - name: Password Reset
   key: user.password.reset.token
@@ -41,9 +43,11 @@ events:
     EN:
       subject: Password Reset
       template_path: templates/en/password_reset.tpl
+      style_path: assets/openware.css
     RU:
       subject: Сброс Пароля
       template_path: templates/ru/password_reset.tpl
+      style_path: assets/openware.css
 
 - name: Deposit Accepted
   key: deposit.updated
@@ -53,6 +57,7 @@ events:
     EN:
       subject: Deposit Accepted
       template_path: templates/en/deposit_accepted.tpl
+      style_path: assets/openware.css
 
 - name: Withdrawal Succeed
   key: withdraw.updated
@@ -62,6 +67,7 @@ events:
     EN:
       subject: Withdrawal Succeed
       template_path: templates/en/withdraw_succeed.tpl
+      style_path: assets/openware.css
 
 - name: New Beneficiary
   key: beneficiary.created
@@ -70,3 +76,4 @@ events:
     EN:
       subject: New Beneficiary
       template_path: templates/en/new_beneficiary.tpl
+      style_path: assets/openware.css
