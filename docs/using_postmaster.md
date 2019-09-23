@@ -123,8 +123,12 @@ Each Event API provider uses own AMQP exchange and algorithm to sign payload.
 
 ```yaml
 exchanges:
-  barong: barong.events.system
-  peatio: peatio.events.model
+  barong:
+    name: barong.events.system
+    signer: peatio
+  peatio:
+    name: peatio.events.model
+    signer: peatio
 ```
 
 Using keychain algorithms and defined public keys for each provider postmaster will validate the data.

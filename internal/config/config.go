@@ -10,17 +10,20 @@ import (
 	"github.com/openware/postmaster/pkg/eventapi"
 )
 
+// Language represents configuration for every language registered for further usage.
 type Language struct {
 	Code string `yaml:"code"`
 	Name string `yaml:"name"`
 }
 
+// Template represents email massage content and subject.
 type Template struct {
 	Subject      string `yaml:"subject"`
 	TemplatePath string `yaml:"template_path,omitempty"`
 	Template     string `yaml:"template,omitempty"`
 }
 
+// Event represent configuration for listening an message from RabbitMQ.
 type Event struct {
 	Name       string              `yaml:"name"`
 	Key        string              `yaml:"key"`
@@ -29,18 +32,27 @@ type Event struct {
 	Expression string              `yaml:"expression"`
 }
 
-// General application configuration.
+// Exchange contains exchange name and signer unique identifier.
+type Exchange struct {
+	Name   string `yaml:"name"`
+	Signer string `yaml:"signer"`
+}
+
+// Config represents application configuration model.
 type Config struct {
 	Languages []Language                    `yaml:"languages"`
 	Keychain  map[string]eventapi.Validator `yaml:"keychain"`
-	Exchanges map[string]string             `yaml:"exchanges"`
+	Exchanges map[string]Exchange           `yaml:"exchanges"`
 	Events    []Event                       `yaml:"events"`
 }
 
+// Template returns Template model for given unique key.
 func (e *Event) Template(key string) Template {
 	return e.Templates[strings.ToUpper(key)]
 }
 
+// Content returns ready to go message with specified data.
+// Note: "template" has bigger priority, than "template_path".
 func (t *Template) Content(data interface{}) ([]byte, error) {
 	var err error
 
@@ -64,6 +76,7 @@ func (t *Template) Content(data interface{}) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
+// ContainsLanguage reports whether the language code is known.
 func (config *Config) ContainsLanguage(code string) bool {
 	for _, lang := range config.Languages {
 		if strings.EqualFold(lang.Code, code) {
@@ -74,16 +87,19 @@ func (config *Config) ContainsLanguage(code string) bool {
 	return false
 }
 
+// ContainsExchange reports whether the exchange with specified key exist.
 func (config *Config) ContainsExchange(id string) bool {
 	_, ok := config.Exchanges[id]
 	return ok
 }
 
+// ContainsKey reports whether the keychain key exist.
 func (config *Config) ContainsKey(id string) bool {
 	_, ok := config.Keychain[id]
 	return ok
 }
 
+// Valid reports whether configuration is valid or not.
 func (lang *Language) Valid() bool {
 	notEmpty := len(strings.TrimSpace(lang.Code)) != 0
 	isUp := lang.Code == strings.ToUpper(lang.Code)
@@ -101,28 +117,30 @@ func (config *Config) validateLanguages() (bool, error) {
 	return true, nil
 }
 
+// ValidateExchanges validates exchanges config.
 func (config *Config) ValidateExchanges() error {
 	if len(config.Exchanges) < 1 {
 		return errors.New("no exchanges was specified")
 	}
 
 	for k, v := range config.Exchanges {
-		if v == "" {
-			return fmt.Errorf("exchange %s can not have empty value", k)
+		if v.Name == "" {
+			return fmt.Errorf("exchange name can not be empty: %s", k)
 		}
 
+		// Check, that signer is not empty and exist in keychain.
+		if v.Signer == "" {
+			return fmt.Errorf("signer %s of exchange %s can not be empty", v.Signer, k)
+		} else if _, ok := config.Keychain[v.Signer]; !ok {
+			return fmt.Errorf("signer %s is not registered", v.Signer)
+		}
 	}
 
 	return nil
 }
 
+// ValidateKeychain validates keychain config.
 func (config *Config) ValidateKeychain() error {
-	for id := range config.Exchanges {
-		if !config.ContainsKey(id) {
-			return fmt.Errorf("exchange %s doesn't have a key", id)
-		}
-	}
-
 	for k, v := range config.Keychain {
 		if v.Value == "" {
 			return fmt.Errorf("key for %s has an empty value", k)
