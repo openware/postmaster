@@ -14,19 +14,14 @@ steps:
         - push
 
   - name: Bump version
-    image: golang:1.13
+    image: quay.io/openware/sdk-tools:0.0.3
     environment:
+      BRANCH_NAME: ${DRONE_BRANCH}
+      REPO_NAME: ${DRONE_REPO}
       GITHUB_API_KEY:
         from_secret: kite_bot_key
-      GO111MODULE: off
     commands:
-      - git config --global user.name "Kite Bot"
-      - git config --global user.email "kite-bot@heliostech.fr"
-      - go get github.com/Clever/gitsem
-      - gitsem -m "[ci skip] Bump version to %s" patch
-      - git remote add authenticated-origin https://kite-bot:$GITHUB_API_KEY@github.com/${DRONE_REPO}
-      - git push --tags authenticated-origin HEAD:$DRONE_BRANCH
-      - cp VERSION .tags
+      - BUNDLE_GEMFILE=/sdk/Gemfile bundle exec rake --rakefile=/sdk/Rakefile release:push
     when:
       event:
         - push
@@ -62,3 +57,6 @@ steps:
         - push
       branch:
         - master
+
+image_pull_secrets:
+  - dockerconfigjson
